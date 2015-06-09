@@ -74,17 +74,16 @@ Section Checker.
       | Abop b h1 h2 => 
         match (b,get_atom h1,get_atom h2) with
         | (BO_eq Tint,Acop (CO_int x),Acop (CO_int y)) => 
-          let fonction_map i l := if i == 0 then l else (if Lit.is_pos l then Lit.neg l else l) in
           let test_correct i0 l :=
             if i0 == 0
-            then true
+            then Lit.is_pos l
             else (
               match get_form (Lit.blit l) with
               | Fiff l1 l2 =>
                 match (get_form (Lit.blit l1),get_form (Lit.blit l2)) with
                 | (Fatom a1,Fatom a2) =>
                   match (get_atom a1,get_atom a2) with
-                  | (Auop (UO_index x1) j,Auop (UO_index y1) k) => (j == i0-1)&&(k == j)&&(x == x1)&&(y==y1)
+                  | (Auop (UO_index x1) j,Auop (UO_index y1) k) => (negb (Lit.is_pos l1))&&(negb (Lit.is_pos l2))&&(j == i0-1)&&(k == j)&&(x == x1)&&(y==y1)
                   | _ => false
                   end
                 | _ => false
@@ -94,7 +93,7 @@ Section Checker.
                  )
           in
           if forallbi (fun i l => test_correct i l) lits
-          then PArray.to_list (PArray.mapi fonction_map lits)
+          then PArray.to_list lits
           else C._true
         | _ => C._true
         end
@@ -117,14 +116,13 @@ Definition check_BuildProjInt lits i :=
       | Abop b h1 h2 => 
         match (b,get_atom h1,get_atom h2) with
         | (BO_eq t,Acop (CO_int x),Acop (CO_int y)) => 
-          let fonction_map i l := if Lit.is_pos l then l else Lit.neg l in
           let test_correct i0 l :=
             match get_form (Lit.blit l) with
             | Fiff l1 l2 =>
               match (get_form (Lit.blit l1),get_form (Lit.blit l2)) with
               | (Fatom a1,Fatom a2) =>
                 match (get_atom a1,get_atom a2) with
-                | (Auop (UO_index x1) j,Auop (UO_index y1) k) => (Lit.is_pos l1)&&(Lit.is_pos l2)&&(Typ.eqb t Typ.Tint)&&(j == i0)&&(k == j)&&(x == x1)&&(y==y1)
+                | (Auop (UO_index x1) j,Auop (UO_index y1) k) => (negb (Lit.is_pos (lits.[0])))&&(Lit.is_pos l1)&&(Lit.is_pos l2)&&(Typ.eqb t Typ.Tint)&&(j == i0)&&(k == j)&&(x == x1)&&(y==y1)
                 | _ => false
                 end
               | _ => false
@@ -133,7 +131,7 @@ Definition check_BuildProjInt lits i :=
             end            
           in
           if test_correct i (lits.[i+1]) 
-          then (fonction_map i (lits.[i+1]))::(Lit.nlit (Lit.blit (lits.[0])))::nil
+          then (lits.[i+1])::(lits.[0])::nil
           else C._true
         | _ => C._true
         end
@@ -148,9 +146,9 @@ Definition check_BuildProjInt lits i :=
 
 
 
-Variable interp_atom : hatom -> bool.
+Variable interp_hatom : hatom -> bool.
 
-Local Notation rho := (Form.interp_state_var interp_atom t_form).
+Local Notation rho := (Form.interp_state_var interp_hatom t_form).
 
 Hypothesis Hch_f : check_form t_form.
 
@@ -158,7 +156,7 @@ Check rho.
 
 Let Hwfrho : Valuation.wf rho.
   Proof.
-    destruct (check_form_correct interp_atom _ Hch_f) as (_, H);exact H. 
+    destruct (check_form_correct interp_hatom _ Hch_f) as (_, H);exact H. 
   Qed.
 
 
@@ -169,9 +167,9 @@ Qed.
 
 
 Let rho_interp : forall x : int,
-    rho x = Form.interp interp_atom t_form (t_form.[ x]).
+    rho x = Form.interp interp_hatom t_form (t_form.[ x]).
   Proof.
-    destruct (check_form_correct interp_atom _ Hch_f) as ((H,H0), _).
+    destruct (check_form_correct interp_hatom _ Hch_f) as ((H,H0), _).
     intros x;apply wf_interp_form;trivial.
   Qed.
 
@@ -218,16 +216,17 @@ Lemma valid_check_BuildProjInt : forall lits i, C.valid rho (check_BuildProjInt 
    case_eq u;intros;auto using C.interp_true.
    case_eq (t_atom.[i8]);intros;auto using C.interp_true.
    case_eq u0;intros;auto using C.interp_true.
-   case_eq ((Lit.is_pos i5)&&(Lit.is_pos i6)&& Typ.eqb t Typ.Tint &&(i9 == i) && (i11 == i9) && (i3 == i10) && (i4 == i12));intros;case_eq (Lit.is_pos (lits.[i+1]));intros.
-   apply andb_true_iff in H14. destruct H14. apply andb_true_iff in H14. destruct H14. apply andb_true_iff in H14. destruct H14. apply andb_true_iff in H14. destruct H14. apply andb_true_iff in H14. destruct H14. apply andb_true_iff in H14. destruct H14.
-   simpl. rewrite orb_false_r. apply orb_true_iff. apply lit_interp_impl.
-   intro. 
+   case_eq (negb (Lit.is_pos (lits .[ 0])) && Lit.is_pos i5 && Lit.is_pos i6 && Typ.eqb t Typ.Tint && (i9 == i) && (i11 == i9) && (i3 == i10) && (i4 == i12));intros;case_eq (Lit.is_pos (lits.[i+1]));intros.
+   apply andb_true_iff in H14; destruct H14;apply andb_true_iff in H14; destruct H14;apply andb_true_iff in H14; destruct H14;apply andb_true_iff in H14; destruct H14;apply andb_true_iff in H14; destruct H14;apply andb_true_iff in H14; destruct H14;apply andb_true_iff in H14; destruct H14.
+   simpl; rewrite orb_false_r; apply orb_true_iff. 
 
-   unfold Lit.interp in H22. unfold Var.interp in H22. rewrite rho_interp in H22. rewrite Lit.is_pos_lit in H22. rewrite Lit.lit_blit in H22. rewrite H0 in H22.
-   unfold Lit.interp. unfold Var.interp. rewrite rho_interp. rewrite H15. rewrite H7.
+   unfold Lit.interp; unfold Var.interp; rewrite rho_interp; rewrite H15; rewrite H7; rewrite negb_true_iff in H14; rewrite H14; rewrite negb_true_iff; apply bool_impl; intro.
+   unfold Form.interp; unfold Form.interp_aux; unfold Lit.interp; unfold Var.interp; rewrite H22; rewrite H21; rewrite rho_interp; rewrite H8;rewrite rho_interp; rewrite H9; unfold Form.interp; unfold Form.interp_aux; unfold Form.interp;unfold Form.interp_aux. 
+   rewrite rho_interp in H23; rewrite H0 in H23; unfold Form.interp in H23; unfold Form.interp_aux in H23.
 
-   unfold Form.interp. unfold Form.interp_aux. unfold Lit.interp. unfold Var.interp. rewrite H14. rewrite H21. rewrite rho_interp. rewrite H8. rewrite rho_interp. rewrite H9. unfold Form.interp. unfold Form.interp_aux. unfold Form.interp. unfold Form.interp_aux. unfold Form.interp in H22. unfold Form.interp_aux in H22.
-   SearchAbout interp_atom.
+
+
+  intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true;intros; auto using C.interp_true.
   Qed.
  
 
