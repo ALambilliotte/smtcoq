@@ -35,6 +35,39 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 
 
+Definition or_of_imp args :=
+  let last := PArray.length args - 1 in
+  PArray.mapi (fun i l => if i == last then l else Lit.neg l) args.
+(* Register or_of_imp as PrimInline. *)
+
+Lemma length_or_of_imp : forall args,
+  PArray.length (or_of_imp args) = PArray.length args.
+Proof. intro; unfold or_of_imp; apply length_mapi. Qed.
+
+Lemma get_or_of_imp : forall args i,
+  i < (PArray.length args) - 1 -> (or_of_imp args).[i] = Lit.neg (args.[i]).
+Proof.
+  unfold or_of_imp; intros args i H; case_eq (0 < PArray.length args).
+  intro Heq; rewrite get_mapi.
+  replace (i == PArray.length args - 1) with false; auto; symmetry; rewrite eqb_false_spec; intro; subst i; unfold is_true in H; rewrite ltb_spec, (to_Z_sub_1 _ _ Heq) in H; omega.
+  rewrite ltb_spec; unfold is_true in H; rewrite ltb_spec, (to_Z_sub_1 _ _ Heq) in H; omega.
+  rewrite ltb_negb_geb; case_eq (PArray.length args <= 0); try discriminate; intros Heq _; assert (H1: PArray.length args = 0).
+  apply to_Z_inj; rewrite leb_spec in Heq; destruct (to_Z_bounded (PArray.length args)) as [H1 _]; change [|0|] with 0%Z in *; omega.
+  rewrite !get_outofbound.
+  rewrite default_mapi, H1; auto.
+  rewrite H1; case_eq (i < 0); auto; intro H2; eelim ltb_0; eassumption.
+  rewrite length_mapi, H1; case_eq (i < 0); auto; intro H2; eelim ltb_0; eassumption.
+Qed.
+
+Lemma get_or_of_imp2 : forall args i, 0 < PArray.length args ->
+  i = (PArray.length args) - 1 -> (or_of_imp args).[i] = args.[i].
+Proof.
+  unfold or_of_imp; intros args i Heq Hi; rewrite get_mapi; subst i.
+  rewrite Int63Axioms.eqb_refl; auto.
+  rewrite ltb_spec, (to_Z_sub_1 _ _ Heq); omega.
+Qed.
+
+
 Section Checker.
 
   Import Atom.
@@ -196,89 +229,241 @@ Section Checker.
       destruct (Form.check_form_correct interp_form_hatom _ ch_form); auto.
     Qed.
 
-  Lemma lit_interp_true : Lit.interp rho Lit._true = true.
-  Proof.
-    apply Lit.interp_true.
-    apply wf_rho.
-  Qed.
+    Lemma lit_interp_true : Lit.interp rho Lit._true = true.
+    Proof.
+      apply Lit.interp_true.
+      apply wf_rho.
+    Qed.
 
 
-  Let rho_interp : forall x : int, rho x = Form.interp interp_form_hatom t_form (t_form.[ x]).
-  Proof.
-    destruct (check_form_correct interp_form_hatom _ ch_form) as ((H,H0), _).
-    intros x;apply wf_interp_form;trivial.
-  Qed.
+    Let rho_interp : forall x : int, rho x = Form.interp interp_form_hatom t_form (t_form.[ x]).
+    Proof.
+      destruct (check_form_correct interp_form_hatom _ ch_form) as ((H,H0), _).
+      intros x;apply wf_interp_form;trivial.
+    Qed.
 
-  Lemma bool_impl : forall a b, (b = true -> a = true) -> a = true \/ b = false.
-  Proof.
-    intros;destruct a;
-    [(left;trivial) | (right;destruct b;[(symmetry;apply H;trivial) | trivial])].
-  Qed.
+    Lemma bool_impl : forall a b, (b = true -> a = true) -> a = true \/ b = false.
+    Proof.
+      intros;destruct a;
+      [(left;trivial) | (right;destruct b;[(symmetry;apply H;trivial) | trivial])].
+    Qed.
 
-  Lemma lit_interp_impl : forall a b rho,(Lit.interp rho b = true -> Lit.interp rho a = true) -> (Lit.interp rho a =true \/Lit.interp rho (Lit.neg b) = true).
-  Proof.
-    intros;rewrite (Lit.interp_neg rho b);rewrite negb_true_iff;apply bool_impl;apply H.
-  Qed.
+    Lemma lit_interp_impl : forall a b rho,(Lit.interp rho b = true -> Lit.interp rho a = true) -> (Lit.interp rho a =true \/Lit.interp rho (Lit.neg b) = true).
+    Proof.
+      intros;rewrite (Lit.interp_neg rho b);rewrite negb_true_iff;apply bool_impl;apply H.
+    Qed.
 
 
-  Lemma valid_check_BuildProjInt : forall lits i, C.valid rho (check_BuildProjInt lits i).
-  Proof.
-    unfold check_BuildProjInt,C.valid. intros lits i.
-    case_eq ((length lits == digits + 1) && (i < digits)).
+    Lemma valid_check_BuildProjInt : forall lits i, C.valid rho (check_BuildProjInt lits i).
+    Proof.
+      unfold check_BuildProjInt,C.valid. intros lits i.
+      case_eq ((length lits == digits + 1) && (i < digits)).
+      
+      intros. case_eq (t_form.[Lit.blit (lits.[0])]).
+      intros. case_eq (t_atom.[i0]);intros; auto using C.interp_true.
+      case_eq b;intros; auto using C.interp_true.
+      case_eq (t_atom.[i1]);intros; auto using C.interp_true.
+      case_eq c;intros; auto using C.interp_true.
+      case_eq (t_atom.[i2]);intros; auto using C.interp_true.
+      case_eq c0;intros; auto using C.interp_true.
+      case_eq (t_form.[Lit.blit (lits.[i+1])]);intros;auto using C.interp_true.
+      case_eq (t_form.[Lit.blit i5]);intros;auto using C.interp_true.
+      case_eq (t_form.[Lit.blit i6]);intros;auto using C.interp_true.
+      case_eq (t_atom.[i7]);intros;auto using C.interp_true.
+      case_eq u;intros;auto using C.interp_true.
+      case_eq (t_atom.[i8]);intros;auto using C.interp_true.
+      case_eq u0;intros;auto using C.interp_true.
+      case_eq (t_atom.[i9]);intros;auto using C.interp_true.
+      case_eq c1;intros;auto using C.interp_true.
+      case_eq (t_atom.[i11]);intros;auto using C.interp_true.
+      case_eq c2;intros;auto using C.interp_true.
+      case_eq (Lit.is_pos i5 && Lit.is_pos i6 && negb (Lit.is_pos (lits .[ 0])) && Lit.is_pos (lits .[ i + 1]) && Typ.eqb t Typ.Tint && (i10 == i) && (i12 == i10) && (i3 == i13) && (i4 == i14));intros.
+      apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18.
+      
+      rewrite Int63Properties.eqb_spec in H19; rewrite Int63Properties.eqb_spec in H20; rewrite Int63Properties.eqb_spec in H21; rewrite Int63Properties.eqb_spec in H22;apply Typ.eqb_spec in H23;subst i10; subst i12; subst i13; subst i14.
+      symmetry in H11;symmetry in H4; symmetry in H6; rewrite H4 in H15; rewrite H6 in H17; rewrite H11 in H13;subst u0;subst t; subst c1; subst c2;symmetry in H11;symmetry in H4; symmetry in H6.
+      rewrite negb_true_iff in H25.
+      
+      simpl; rewrite orb_false_r; apply orb_true_iff.
+      unfold Lit.interp; rewrite H24; rewrite H25; rewrite negb_true_iff; unfold Var.interp; rewrite !rho_interp; rewrite H7; rewrite H0.
+      simpl; unfold Lit.interp; rewrite H18; rewrite H26; unfold Var.interp; rewrite !rho_interp; rewrite H8; rewrite H9;simpl.
+      unfold Atom.interp_form_hatom; unfold interp_hatom; rewrite !t_interp_wf. 
+      rewrite H1; rewrite H10;rewrite H12; simpl; rewrite !t_interp_wf.
+      unfold interp_uop; unfold interp_bop; rewrite H11; rewrite H2; simpl; rewrite H3;rewrite H5;rewrite H14;rewrite H16; simpl; unfold interp_cop; rewrite H4;rewrite H6;simpl.
+      apply bool_impl; intro H27; apply Int63Properties.eqb_spec in H27; subst i4; trivial; apply Bool.eqb_true_iff; trivial.
+      
+      apply wf_t_atom. apply def_t_atom. 
+      apply wf_t_atom. apply def_t_atom.
+      apply wf_t_atom. apply def_t_atom.
+      apply wf_t_atom. apply def_t_atom.
+      apply wf_t_atom. apply def_t_atom.
+      apply wf_t_atom. apply def_t_atom.
+      apply wf_t_atom. apply def_t_atom. 
+      auto using C.interp_true.
+      intros; auto using C.interp_true.
+      intros; auto using C.interp_true.
+      intros; auto using C.interp_true.
+      intros; auto using C.interp_true.
+      intros; auto using C.interp_true.
+      intros; auto using C.interp_true.
+      intros; auto using C.interp_true.
+      intros; auto using C.interp_true.
+      intros; auto using C.interp_true.
+      intros; auto using C.interp_true.
+    Qed.
 
-    intros. case_eq (t_form.[Lit.blit (lits.[0])]).
-    intros. case_eq (t_atom.[i0]);intros; auto using C.interp_true.
-    case_eq b;intros; auto using C.interp_true.
-    case_eq (t_atom.[i1]);intros; auto using C.interp_true.
-    case_eq c;intros; auto using C.interp_true.
-    case_eq (t_atom.[i2]);intros; auto using C.interp_true.
-    case_eq c0;intros; auto using C.interp_true.
-    case_eq (t_form.[Lit.blit (lits.[i+1])]);intros;auto using C.interp_true.
-    case_eq (t_form.[Lit.blit i5]);intros;auto using C.interp_true.
-    case_eq (t_form.[Lit.blit i6]);intros;auto using C.interp_true.
-    case_eq (t_atom.[i7]);intros;auto using C.interp_true.
-    case_eq u;intros;auto using C.interp_true.
-    case_eq (t_atom.[i8]);intros;auto using C.interp_true.
-    case_eq u0;intros;auto using C.interp_true.
-    case_eq (t_atom.[i9]);intros;auto using C.interp_true.
-    case_eq c1;intros;auto using C.interp_true.
-    case_eq (t_atom.[i11]);intros;auto using C.interp_true.
-    case_eq c2;intros;auto using C.interp_true.
-    case_eq (Lit.is_pos i5 && Lit.is_pos i6 && negb (Lit.is_pos (lits .[ 0])) && Lit.is_pos (lits .[ i + 1]) && Typ.eqb t Typ.Tint && (i10 == i) && (i12 == i10) && (i3 == i13) && (i4 == i14));intros.
-    apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18;apply andb_true_iff in H18; destruct H18.
-    
-    rewrite Int63Properties.eqb_spec in H19; rewrite Int63Properties.eqb_spec in H20; rewrite Int63Properties.eqb_spec in H21; rewrite Int63Properties.eqb_spec in H22;apply Typ.eqb_spec in H23;subst i10; subst i12; subst i13; subst i14.
-    symmetry in H11;symmetry in H4; symmetry in H6; rewrite H4 in H15; rewrite H6 in H17; rewrite H11 in H13;subst u0;subst t; subst c1; subst c2;symmetry in H11;symmetry in H4; symmetry in H6.
-    rewrite negb_true_iff in H25.
+    Lemma digit_plus_1_not_0 : (0 == digits+1) = false.
+    Proof.
+      apply Int63Properties.eqb_false_complete.
+      apply not_eq_sym.
+      apply Int63Properties.not_0_ltb.
+      apply succ_max_int.
+      reflexivity.
+    Qed.
 
-    simpl; rewrite orb_false_r; apply orb_true_iff.
-    unfold Lit.interp; rewrite H24; rewrite H25; rewrite negb_true_iff; unfold Var.interp; rewrite !rho_interp; rewrite H7; rewrite H0.
-    simpl; unfold Lit.interp; rewrite H18; rewrite H26; unfold Var.interp; rewrite !rho_interp; rewrite H8; rewrite H9;simpl.
-    unfold Atom.interp_form_hatom; unfold interp_hatom; rewrite !t_interp_wf. 
-    rewrite H1; rewrite H10;rewrite H12; simpl; rewrite !t_interp_wf.
-    unfold interp_uop; unfold interp_bop; rewrite H11; rewrite H2; simpl; rewrite H3;rewrite H5;rewrite H14;rewrite H16; simpl; unfold interp_cop; rewrite H4;rewrite H6;simpl.
-    apply bool_impl; intro H27; apply Int63Properties.eqb_spec in H27; subst i4; trivial; apply Bool.eqb_true_iff; trivial.
+   Lemma digit_plus_1_not_02 : (digits+1 == 0) = false.
+    Proof.
+      apply Int63Properties.eqb_false_complete.
+      apply Int63Properties.not_0_ltb.
+      apply succ_max_int.
+      reflexivity.
+    Qed.
 
-    apply wf_t_atom. apply def_t_atom. 
-    apply wf_t_atom. apply def_t_atom.
-    apply wf_t_atom. apply def_t_atom.
-    apply wf_t_atom. apply def_t_atom.
-    apply wf_t_atom. apply def_t_atom.
-    apply wf_t_atom. apply def_t_atom.
-    apply wf_t_atom. apply def_t_atom. 
-    auto using C.interp_true.
-    intros; auto using C.interp_true.
-    intros; auto using C.interp_true.
-    intros; auto using C.interp_true.
-    intros; auto using C.interp_true.
-    intros; auto using C.interp_true.
-    intros; auto using C.interp_true.
-    intros; auto using C.interp_true.
-    intros; auto using C.interp_true.
-    intros; auto using C.interp_true.
-    intros; auto using C.interp_true.
-  Qed.
+    Axiom afold_left_or : forall a,
+      afold_left bool int false orb (Lit.interp rho) a =
+      C.interp rho (to_list a).
 
+    Ltac tauto_check :=
+      try (rewrite !Lit.interp_neg);
+      repeat 
+      match goal with |- context [Lit.interp rho ?x] => 
+      destruct (Lit.interp rho x);trivial end.
+
+    Axiom afold_left_and : forall a,
+      afold_left bool int true andb (Lit.interp rho) a =
+      List.forallb (Lit.interp rho) (to_list a).
+
+    Axiom afold_right_impb : forall a,
+      (afold_right bool int true implb (Lit.interp rho) a) =
+      C.interp rho (to_list (or_of_imp a)).
+      
+
+    Lemma valid_check_BuildDefInt : forall lits, C.valid rho (check_BuildDefInt lits).
+    Proof.
+      unfold check_BuildDefInt,C.valid. intro lits.
+      
+      case_eq ((length lits == digits + 1) && Lit.is_pos (lits .[ 0])); intro H. apply andb_true_iff in H; destruct H; rewrite Int63Properties.eqb_spec in H.
+      case_eq (t_form .[ Lit.blit (lits .[ 0])]); intros.
+      case_eq (t_atom.[i]);intros; auto using C.interp_true.
+      case_eq (b);intros; auto using C.interp_true.
+      case_eq (t_atom.[i0]);intros; auto using C.interp_true.
+      case_eq (c);intros; auto using C.interp_true.
+      case_eq (t_atom .[ i1]);intros; auto using C.interp_true.
+      case_eq (c0);intros; auto using C.interp_true.
+      case_eq (
+        forallbi
+        (fun i4 l : int =>
+         if i4 == 0
+         then Lit.is_pos l
+         else
+          match t_form .[ Lit.blit l] with
+          | Fatom _ => false
+          | Ftrue => false
+          | Ffalse => false
+          | Fnot2 _ _ => false
+          | Fand _ => false
+          | For _ => false
+          | Fimp _ => false
+          | Fxor _ _ => false
+          | Fiff l1 l2 =>
+              match t_form .[ Lit.blit l1] with
+              | Fatom a1 =>
+                  match t_form .[ Lit.blit l2] with
+                  | Fatom a2 =>
+                      match t_atom .[ a1] with
+                      | Acop _ => false
+                      | Auop UO_xO _ => false
+                      | Auop UO_xI _ => false
+                      | Auop UO_Zpos _ => false
+                      | Auop UO_Zneg _ => false
+                      | Auop UO_Zopp _ => false
+                      | Auop (UO_index j) hx1 =>
+                          match t_atom .[ a2] with
+                          | Acop _ => false
+                          | Auop UO_xO _ => false
+                          | Auop UO_xI _ => false
+                          | Auop UO_Zpos _ => false
+                          | Auop UO_Zneg _ => false
+                          | Auop UO_Zopp _ => false
+                          | Auop (UO_index k) hy1 =>
+                              match t_atom .[ hx1] with
+                              | Acop CO_xH => false
+                              | Acop CO_Z0 => false
+                              | Acop (CO_int x1) =>
+                                  match t_atom .[ hy1] with
+                                  | Acop CO_xH => false
+                                  | Acop CO_Z0 => false
+                                  | Acop (CO_int y1) =>
+                                      Lit.is_pos l1 && Lit.is_pos l2 &&
+                                      negb (Lit.is_pos l) && (j == i4 - 1) &&
+                                      (k == j) && (i2 == x1) && (i3 == y1)
+                                  | Auop _ _ => false
+                                  | Abop _ _ _ => false
+                                  | Anop _ _ => false
+                                  | Aapp _ _ => false
+                                  end
+                              | Auop _ _ => false
+                              | Abop _ _ _ => false
+                              | Anop _ _ => false
+                              | Aapp _ _ => false
+                              end
+                          | Abop _ _ _ => false
+                          | Anop _ _ => false
+                          | Aapp _ _ => false
+                          end
+                      | Abop _ _ _ => false
+                      | Anop _ _ => false
+                      | Aapp _ _ => false
+                      end
+                  | Ftrue => false
+                  | Ffalse => false
+                  | Fnot2 _ _ => false
+                  | Fand _ => false
+                  | For _ => false
+                  | Fimp _ => false
+                  | Fxor _ _ => false
+                  | Fiff _ _ => false
+                  | Fite _ _ _ => false
+                  end
+              | Ftrue => false
+              | Ffalse => false
+              | Fnot2 _ _ => false
+              | Fand _ => false
+              | For _ => false
+              | Fimp _ => false
+              | Fxor _ _ => false
+              | Fiff _ _ => false
+              | Fite _ _ _ => false
+              end
+          | Fite _ _ _ => false
+          end) lits
+              );intros; auto using C.interp_true.
+      
+      rewrite forallbi_spec in H8.
+      unfold C.interp.
+      unfold List.existsb.
+      simpl.
+      rewrite <- (afold_left_or lits). simpl. SearchAbout afold_left.
+      unfold afold_left. rewrite H. rewrite digit_plus_1_not_02.
+      unfold foldi.
+      apply (afold_left_orb_true int j lits Lit.interp rho).
+      unfold forallbi.
+      rewrite H. rewrite digit_plus_1_not_0.
+      unfold Int63Op.forallb. unfold foldi_cont.
+      case_eq (0 == length lits);intros. rewrite Int63Properties.eqb_spec in H8. auto using C.interp_true.
+      
+    Qed.
+ 
   End Proof.
   
 End Checker.
