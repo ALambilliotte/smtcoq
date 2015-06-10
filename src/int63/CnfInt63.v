@@ -151,51 +151,6 @@ Section Checker.
     else C._true
   .
 
-(*
-Section Proof.
-
-    Variables (t_i : array typ_eqb)
-              (t_func : array (Atom.tval t_i))
-              (ch_atom : Atom.check_atom t_atom)
-              (ch_form : Form.check_form t_form)
-              (wt_t_atom : Atom.wt t_i t_func t_atom).
-
-    Local Notation check_atom :=
-      (check_aux t_i t_func (get_type t_i t_func t_atom)).
-
-    Local Notation interp_form_hatom :=
-      (Atom.interp_form_hatom t_i t_func t_atom).
-
-    Local Notation rho :=
-      (Form.interp_state_var interp_form_hatom t_form).
-
-    Local Notation t_interp := (t_interp t_i t_func t_atom).
-
-    Local Notation interp_atom :=
-      (interp_aux t_i t_func (get t_interp)).
-
-    Let wf_t_atom : Atom.wf t_atom.
-    Proof. destruct (Atom.check_atom_correct _ ch_atom); auto. Qed.
-
-    Let def_t_atom : default t_atom = Atom.Acop Atom.CO_xH.
-    Proof. destruct (Atom.check_atom_correct _ ch_atom); auto. Qed.
-
-    Let def_t_form : default t_form = Form.Ftrue.
-    Proof.
-      destruct (Form.check_form_correct interp_form_hatom _ ch_form) as [H _]; destruct H; auto.
-    Qed.
-
-    Let wf_t_form : Form.wf t_form.
-    Proof.
-      destruct (Form.check_form_correct interp_form_hatom _ ch_form) as [H _]; destruct H; auto.
-    Qed.
-
-    Let wf_rho : Valuation.wf rho.
-    Proof.
-      destruct (Form.check_form_correct interp_form_hatom _ ch_form); auto.
-    Qed.
-*)
-
   Section Proof.
     
     Variables (t_i : array typ_eqb)

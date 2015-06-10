@@ -24,10 +24,16 @@ let gen_constant modules constant = lazy (gen_constant_in_modules "SMT" modules 
 
 
 (* Int63 *)
-let int63_modules = [["Coq";"Numbers";"Cyclic";"Int63";"Int63Native"]]
+let int63_modules = [["Coq";"Numbers";"Cyclic";"Int63";"Int63Native"];["Coq";"Numbers";"Cyclic";"Int63";"Int63Op"]]
 
+type int63 = Uint63.t
 let mkInt : int -> Term.constr =
   fun i -> Term.mkInt (Uint63.of_int i)
+let mkInt63 : int63 -> Term.constr = Term.mkInt
+let isInt : Term.constr -> bool = Term.isInt
+let destInt : Term.constr -> int =
+  fun t -> Uint63.to_int (Term.destInt t)
+let destInt63 : Term.constr -> int63 = Term.destInt
 
 let cint = gen_constant int63_modules "int"
 

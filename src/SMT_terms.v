@@ -859,6 +859,8 @@ Module Atom.
         | CO_int a => Bval Typ.Tint a
         end.
 
+      Definition bit_rev a x := Int63Op.bit x a.
+
       Definition interp_uop o :=    
         match o with
         | UO_xO   => apply_unop Typ.Tpositive Typ.Tpositive xO
@@ -866,7 +868,7 @@ Module Atom.
         | UO_Zpos => apply_unop Typ.Tpositive Typ.TZ Zpos
         | UO_Zneg => apply_unop Typ.Tpositive Typ.TZ Zneg
         | UO_Zopp => apply_unop Typ.TZ Typ.TZ Zopp
-        | UO_index a => apply_unop Typ.Tint Typ.Tbool (fun x => Int63Op.bit x a)
+        | UO_index a => apply_unop Typ.Tint Typ.Tbool (bit_rev a)
         end.
 
       Definition interp_bop o :=
@@ -1035,7 +1037,7 @@ Module Atom.
         exists (Zpos y); auto.
         exists (Zneg y); auto.
         exists (- y)%Z; auto.
-        exists (Int63Op.bit y i); auto.
+        exists (bit_rev i y); auto.
         (* Binary operators *)
         destruct op as [ | | | | | | | |A]; intros [i| | | | ]; simpl; try discriminate; unfold is_true; rewrite andb_true_iff; try (change (Typ.eqb (get_type h1) Typ.TZ = true /\ Typ.eqb (get_type h2) Typ.TZ = true) with (is_true (Typ.eqb (get_type h1) Typ.TZ) /\ is_true (Typ.eqb (get_type h2) Typ.TZ)); rewrite !Typ.eqb_spec; intros [H1 H2]; destruct (check_aux_interp_hatom h1) as [x1 Hx1]; rewrite Hx1; destruct (check_aux_interp_hatom h2) as [x2 Hx2]; rewrite Hx2; simpl; generalize x1 Hx1 x2 Hx2; rewrite H1, H2; intros y1 Hy1 y2 Hy2; rewrite !Typ.cast_refl).
         exists (y1 + y2)%Z; auto.
@@ -1257,7 +1259,7 @@ Module Atom.
         case (Typ.cast (v_type Typ.type interp_t (a .[ i])) Typ.Tpositive); simpl; try (exists true; auto); intro k; exists (Zpos (k interp_t x)); auto.
         case (Typ.cast (v_type Typ.type interp_t (a .[ i])) Typ.Tpositive); simpl; try (exists true; auto); intro k; exists (Zneg (k interp_t x)); auto.
         case (Typ.cast (v_type Typ.type interp_t (a .[ i])) Typ.TZ); simpl; try (exists true; auto); intro k; exists (- k interp_t x)%Z; auto.
-        case (Typ.cast (v_type Typ.type interp_t (a .[ i])) Typ.Tint); simpl; try (intro k; exists (bit (k interp_t x) i0); auto); try (exists true; auto).
+        case (Typ.cast (v_type Typ.type interp_t (a .[ i])) Typ.Tint); simpl; try (intro k; exists (bit_rev i0 (k interp_t x)); auto); try (exists true; auto).
         (* Binary operators *)
         intros [ | | | | | | | |A] h1 h2; simpl; rewrite andb_true_iff; intros [H1 H2]; destruct (IH h1 H1) as [x Hx]; destruct (IH h2 H2) as [y Hy]; rewrite Hx, Hy; simpl.
         case (Typ.cast (v_type Typ.type interp_t (a .[ h1])) Typ.TZ); simpl; try (exists true; auto); intro k1; case (Typ.cast (v_type Typ.type interp_t (a .[ h2])) Typ.TZ); simpl; try (exists true; auto); intro k2; exists (k1 interp_t x + k2 interp_t y)%Z; auto.

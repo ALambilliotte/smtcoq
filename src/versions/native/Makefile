@@ -45,6 +45,7 @@ OCAMLLIBS?=-I versions/native\
   -I trace\
   -I lia\
   -I euf\
+  -I int63\
   -I cnf
 COQLIBS?=-I versions/native\
   -I zchaff\
@@ -52,6 +53,7 @@ COQLIBS?=-I versions/native\
   -I trace\
   -I lia\
   -I euf\
+  -I int63\
   -I cnf -R . SMTCoq
 COQDOCLIBS?=-R . SMTCoq
 
@@ -63,7 +65,7 @@ COQDOCLIBS?=-R . SMTCoq
 
 CAMLYACC=$(CAMLBIN)ocamlyacc
 CAMLLEX=$(CAMLBIN)ocamllex
-VCMXS=NSMTCoq_State.cmxs NSMTCoq_Misc.cmxs NSMTCoq_SMT_terms.cmxs cnf/NSMTCoq_cnf_Cnf.cmxs euf/NSMTCoq_euf_Euf.cmxs lia/NSMTCoq_lia_Lia.cmxs spl/NSMTCoq_spl_Syntactic.cmxs spl/NSMTCoq_spl_Arithmetic.cmxs spl/NSMTCoq_spl_Operators.cmxs NSMTCoq_Trace.cmxs NSMTCoq_SMTCoq.cmxs NSMTCoq_State.cmi NSMTCoq_Misc.cmi NSMTCoq_SMT_terms.cmi cnf/NSMTCoq_cnf_Cnf.cmi euf/NSMTCoq_euf_Euf.cmi lia/NSMTCoq_lia_Lia.cmi spl/NSMTCoq_spl_Syntactic.cmxs spl/NSMTCoq_spl_Arithmetic.cmi spl/NSMTCoq_spl_Operators.cmi NSMTCoq_Trace.cmi NSMTCoq_Trace.cmi NSMTCoq_SMTCoq.cmi
+VCMXS=NSMTCoq_State.cmxs NSMTCoq_Misc.cmxs NSMTCoq_SMT_terms.cmxs cnf/NSMTCoq_cnf_Cnf.cmxs int63/NSMTCoq_int63_CnfInt63.cmxs euf/NSMTCoq_euf_Euf.cmxs lia/NSMTCoq_lia_Lia.cmxs spl/NSMTCoq_spl_Syntactic.cmxs spl/NSMTCoq_spl_Arithmetic.cmxs spl/NSMTCoq_spl_Operators.cmxs NSMTCoq_Trace.cmxs NSMTCoq_SMTCoq.cmxs NSMTCoq_State.cmi NSMTCoq_Misc.cmi NSMTCoq_SMT_terms.cmi cnf/NSMTCoq_cnf_Cnf.cmi int63/NSMTCoq_int63_CnfInt63.cmi euf/NSMTCoq_euf_Euf.cmi lia/NSMTCoq_lia_Lia.cmi spl/NSMTCoq_spl_Syntactic.cmxs spl/NSMTCoq_spl_Arithmetic.cmi spl/NSMTCoq_spl_Operators.cmi NSMTCoq_Trace.cmi NSMTCoq_Trace.cmi NSMTCoq_SMTCoq.cmi
 CMXS=trace/smt_tactic.cmxs
 CMXA=trace/smtcoq.cmxa
 
@@ -142,6 +144,7 @@ VFILES:=Trace.v\
   spl/Syntactic.v\
   lia/Lia.v\
   euf/Euf.v\
+  int63/CnfInt63.v\
   cnf/Cnf.v
 
 -include $(addsuffix .d,$(VFILES))
@@ -340,7 +343,7 @@ clean:
 	- rm -rf $(CMXA)
 	- rm -rf ml
 	- rm -rf test
-	- rm -f NSMTCoq* cnf/NSMTCoq* euf/NSMTCoq* lia/NSMTCoq* spl/NSMTCoq* ../unit-tests/NSMTCoq* ../unit-tests/*.zlog ../unit-tests/*.vtlog verit/veritParser.mli verit/veritParser.ml verit/veritLexer.ml verit/smtlib2_parse.mli verit/smtlib2_parse.ml verit/smtlib2_lex.ml
+	- rm -f NSMTCoq* cnf/NSMTCoq* int63/NSMTCoq* euf/NSMTCoq* lia/NSMTCoq* spl/NSMTCoq* ../unit-tests/NSMTCoq* ../unit-tests/*.vo ../unit-tests/*.zlog ../unit-tests/*.vtlog verit/veritParser.mli verit/veritParser.ml verit/veritLexer.ml verit/smtlib2_parse.mli verit/smtlib2_parse.ml verit/smtlib2_lex.ml
 
 archclean:
 	rm -f *.cmx *.o

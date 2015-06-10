@@ -23,6 +23,7 @@ type btype =
   | TZ
   | Tbool
   | Tpositive
+  | Tint
   | Tindex of indexed_type
 
 module Btype : 
@@ -55,6 +56,7 @@ module Btype :
 type cop = 
    | CO_xH
    | CO_Z0
+   | CO_int of Structures.int63
 
 type uop =
    | UO_xO
@@ -62,6 +64,7 @@ type uop =
    | UO_Zpos 
    | UO_Zneg
    | UO_Zopp
+   | UO_index of int
 
 type bop = 
    | BO_Zplus
@@ -71,6 +74,7 @@ type bop =
    | BO_Zle
    | BO_Zge
    | BO_Zgt
+   | BO_int_xor
    | BO_eq of btype
 
 type nop =
