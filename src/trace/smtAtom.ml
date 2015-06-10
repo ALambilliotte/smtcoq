@@ -782,3 +782,4 @@ module Atom =
 
 module Form = SmtForm.Make(Atom)
 module Trace = SmtTrace.MakeOpt(Form)
+module Cnf = SmtCnf.MakeCnf(Form)
