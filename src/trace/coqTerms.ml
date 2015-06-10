@@ -20,6 +20,8 @@ let gen_constant modules constant = lazy (gen_constant_in_modules "SMT" modules 
 (* Int63 *)
 let cint = Structures.cint
 let ceq63 = gen_constant Structures.int63_modules "eqb"
+let clxor = gen_constant Structures.int63_modules "lxor"
+let cbit = gen_constant Structures.int63_modules "bit"
 
 (* PArray *)
 let carray = gen_constant Structures.parray_modules "array"
@@ -106,6 +108,7 @@ let ctype = gen_constant smt_modules "type"
 let cTZ = gen_constant smt_modules "TZ"
 let cTbool = gen_constant smt_modules "Tbool"
 let cTpositive = gen_constant smt_modules "Tpositive"
+let cTint = gen_constant smt_modules "Tint"
 let cTindex = gen_constant smt_modules "Tindex"
 
 let ctyp_eqb = gen_constant smt_modules "typ_eqb"
@@ -119,12 +122,16 @@ let cTval =  gen_constant smt_modules "Tval"
 
 let cCO_xH = gen_constant smt_modules "CO_xH"
 let cCO_Z0 = gen_constant smt_modules "CO_Z0"
+let cCO_int = gen_constant smt_modules "CO_int"
 
 let cUO_xO = gen_constant smt_modules "UO_xO"
 let cUO_xI = gen_constant smt_modules "UO_xI"
 let cUO_Zpos = gen_constant smt_modules "UO_Zpos"
 let cUO_Zneg = gen_constant smt_modules "UO_Zneg"
 let cUO_Zopp = gen_constant smt_modules "UO_Zopp"
+let cUO_index = gen_constant smt_modules "UO_index"
+
+let cbit_rev = gen_constant smt_modules "bit_rev"
 
 let cBO_Zplus = gen_constant smt_modules "BO_Zplus"
 let cBO_Zminus = gen_constant smt_modules "BO_Zminus"
@@ -133,6 +140,7 @@ let cBO_Zlt = gen_constant smt_modules "BO_Zlt"
 let cBO_Zle = gen_constant smt_modules "BO_Zle"
 let cBO_Zge = gen_constant smt_modules "BO_Zge"
 let cBO_Zgt = gen_constant smt_modules "BO_Zgt"
+let cBO_int_xor = gen_constant smt_modules "BO_int_xor"
 let cBO_eq = gen_constant smt_modules "BO_eq"
 
 let cNO_distinct = gen_constant smt_modules "NO_distinct"
@@ -167,8 +175,10 @@ let make_certif_ops modules =
   gen_constant modules "ImmBuildProj", gen_constant modules"ImmBuildDef", 
   gen_constant modules"ImmBuildDef2",
   gen_constant modules "EqTr", gen_constant modules "EqCgr", gen_constant modules "EqCgrP", 
-  gen_constant modules "LiaMicromega", gen_constant modules "LiaDiseq", gen_constant modules "SplArith", gen_constant modules "SplDistinctElim")
-  
+  gen_constant modules "LiaMicromega", gen_constant modules "LiaDiseq", gen_constant modules "SplArith", gen_constant modules "SplDistinctElim",
+  gen_constant modules "BuildDefInt", gen_constant modules "BuildProjInt"
+)
+
 
 (** Useful construction *)
 

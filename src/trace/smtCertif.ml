@@ -108,6 +108,14 @@ type 'hform rule =
   (* Elimination of operators *)
   | SplDistinctElim of 'hform clause * 'hform
 
+  (* Certificates for bit blasting of 63-bits integers *)
+  | BuildDefInt of 'hform array
+    (*  * Def of equality : {(a = b) ∨ ¬(a₀ ⇔ b₀) ∨ ... ∨ ¬(a₆₂ ⇔ b₆₂)}
+    *)
+  | BuildProjInt of 'hform array * int
+    (*  * Projection of equality : {¬(a = b) ∨ (aᵢ ⇔ bᵢ)}
+    *)
+
 and 'hform clause = {
             id    : clause_id;
     mutable kind  : 'hform clause_kind;
@@ -137,4 +145,5 @@ let used_clauses r =
   | ImmFlatten (c,_)  | SplArith (c,_,_) | SplDistinctElim (c,_) -> [c]
   | True | False | BuildDef _ | BuildDef2 _ | BuildProj _
   | EqTr _ | EqCgr _ | EqCgrP _
-  | LiaMicromega _ | LiaDiseq _ -> []
+  | LiaMicromega _ | LiaDiseq _
+  | BuildDefInt _ | BuildProjInt _ -> []

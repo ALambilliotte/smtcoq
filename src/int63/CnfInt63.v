@@ -64,6 +64,7 @@ Section Checker.
     end.
 
 (*TODO : remplace egalité booléène par equivalent*)
+  (* Computes the tautology: (a = b) ∨ ¬(a₀ ⇔ b₀) ∨ ... ∨ ¬(a₆₂ ⇔ b₆₂) *)
  Definition check_BuildDefInt lits :=
   let n := PArray.length lits in
   if (n == Int63Op.digits + 1)&&(Lit.is_pos (lits.[0]))
@@ -106,6 +107,7 @@ Section Checker.
   .
 
 
+             (* Computes the tautology : ¬(a = b) ∨ (aᵢ ⇔ bᵢ) *)
 Definition check_BuildProjInt lits i :=
   let n := PArray.length lits in
   if (n == Int63Op.digits + 1)&&(i < Int63Op.digits)
