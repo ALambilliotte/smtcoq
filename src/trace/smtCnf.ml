@@ -246,19 +246,35 @@ module MakeCnf (Form:FORM) =
 
               | Fnot2 _ -> assert false
 
-    let make_cnf reify c =
+    (* let make_cnf reify c = *)
+    (*   let ftrue = Form.get reify (Fapp(Ftrue, [||])) in *)
+    (*   let ffalse = Form.get reify (Fapp(Ffalse, [||])) in *)
+    (*   last := c; *)
+    (*   link_Other True [ftrue]; *)
+    (*   link_Other False [Form.neg ffalse]; *)
+    (*   (try  *)
+    (*     imm_cnf c; *)
+    (*     List.iter (Array.iter cnf) !cnf_todo *)
+    (*   with Cnf_done -> ()); *)
+    (*   let res = !last in *)
+    (*   clear (); *)
+    (*   res *)
+
+    let make_cnf_list reify c l =
       let ftrue = Form.get reify (Fapp(Ftrue, [||])) in
       let ffalse = Form.get reify (Fapp(Ffalse, [||])) in
       last := c;
       link_Other True [ftrue];
       link_Other False [Form.neg ffalse];
-      (try 
-	imm_cnf c;
-	List.iter (Array.iter cnf) !cnf_todo
-      with Cnf_done -> ());
+      (try
+	 imm_cnf c;
+	 List.iter (Array.iter cnf) ((Array.of_list l)::(!cnf_todo))
+       with Cnf_done -> ());
       let res = !last in
       clear ();
       res
+
+    let make_cnf reify c = make_cnf_list reify c []
 
   end
 
