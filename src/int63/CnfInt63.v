@@ -19,6 +19,7 @@ Require Import Int63.
 Require Import PArray.
 Require Import BoolEq.
 Require Import NZParity.
+Require Import Classical.
 
 Add LoadPath ".." as SMTCoq.
 
@@ -105,7 +106,7 @@ Section Checker.
         match get_atom a with
         | Abop b h1 h2 => 
           match (b,get_atom h1,get_atom h2) with
-          | (BO_eq Tint,Acop (CO_int x),Acop (CO_int y)) => 
+          | (BO_eq t,Acop (CO_int x),Acop (CO_int y)) => 
             let test_correct i0 l :=
               if i0 == 0
               then Lit.is_pos l
@@ -128,7 +129,7 @@ Section Checker.
                 end
                    )
             in
-            if forallbi (fun i l => test_correct i l) lits
+            if (Typ.eqb t Typ.Tint)&&forallbi (fun i l => test_correct i l) lits
             then PArray.to_list lits
             else C._true
           | _ => C._true
@@ -346,7 +347,74 @@ Section Checker.
     Axiom afold_right_impb : forall a,
       (afold_right bool int true implb (Lit.interp rho) a) =
       C.interp rho (to_list (or_of_imp a)).
-      
+
+    Lemma contrap : forall a b, (a = true -> b = true) <-> (b = false -> a = false).
+    Proof.
+      intros.
+      split.
+      intros.
+      destruct a.
+      destruct b.
+      trivial.
+      symmetry.
+      apply H.
+      trivial.
+      trivial.
+      intros;destruct a;destruct b.
+      trivial.
+      symmetry.
+      apply H; trivial.
+      trivial.
+      apply H0.
+    Qed.
+
+    Lemma bit_eq_false i1 i2: i1 <> i2 -> exists i, bit i1 i <> bit i2 i /\ i < digits = true.
+    Proof.
+      intros.
+      rewrite bit_eq in H. 
+      apply not_all_ex_not in H.
+      inversion H.
+      exists x.
+      split.
+      apply H0.
+      assert (digits <= x = true -> (Bool.eqb (bit i1 x) (bit i2 x) = true)).
+      intros.
+      rewrite !bit_M.
+      simpl.
+      trivial.
+      apply H1. apply H1.
+      apply contrap in H1.
+      apply negb_true_iff in H1.
+      rewrite <- H1.
+      rewrite ltb_negb_geb.
+      trivial.
+      rewrite Bool.eqb_false_iff.
+      apply H0.
+    Qed. 
+    
+    
+    Lemma inf_plus_un : forall a b, (b < max_int) = true -> (a < b) = true -> (a + 1 < b + 1) = true.
+    Proof.
+      intros a b H1 H2.
+      rewrite ltb_leb_sub1.
+      generalize H2.
+      rewrite <- (ltb_leb_add1 (b +1 -1) b a).
+      intro.
+      assert (b = b+1-1).
+      rewrite <- to_Z_eq.
+      rewrite (to_Z_sub_1 (b+1) 0).
+      rewrite (to_Z_add_1 b max_int).
+      intuition.
+      apply H1.
+      apply succ_max_int.
+      apply H1.
+      rewrite <- H0.
+      apply H.
+      apply H2.
+      apply not_0_ltb.
+      apply succ_max_int.
+      apply H1.
+    Qed.
 
     Lemma valid_check_BuildDefInt : forall lits, C.valid rho (check_BuildDefInt lits).
     Proof.
@@ -360,7 +428,7 @@ Section Checker.
       case_eq (c);intros; auto using C.interp_true.
       case_eq (t_atom .[ i1]);intros; auto using C.interp_true.
       case_eq (c0);intros; auto using C.interp_true.
-      case_eq (
+      case_eq ( Typ.eqb t Typ.Tint &&
         forallbi
         (fun i4 l : int =>
          if i4 == 0
@@ -448,19 +516,210 @@ Section Checker.
           | Fite _ _ _ => false
           end) lits
               );intros; auto using C.interp_true.
-      
+      apply andb_true_iff in H8; destruct H8 as [H10 H8];apply Typ.eqb_spec in H10; subst t.
+
       rewrite forallbi_spec in H8.
-      unfold C.interp.
-      unfold List.existsb.
-      simpl.
-      rewrite <- (afold_left_or lits). simpl. SearchAbout afold_left.
-      unfold afold_left. rewrite H. rewrite digit_plus_1_not_02.
-      unfold foldi.
-      apply (afold_left_orb_true int j lits Lit.interp rho).
-      unfold forallbi.
-      rewrite H. rewrite digit_plus_1_not_0.
-      unfold Int63Op.forallb. unfold foldi_cont.
-      case_eq (0 == length lits);intros. rewrite Int63Properties.eqb_spec in H8. auto using C.interp_true.
+      unfold C.interp. SearchAbout List.existsb. apply existsb_exists. 
+      case_eq (i2 == i3);intros. rewrite Int63Properties.eqb_spec in H9; subst i2.
+      exists (lits.[0]). unfold Lit.interp. rewrite H0. unfold Var.interp. rewrite rho_interp. rewrite H1. simpl. unfold Atom.interp_form_hatom. unfold interp_hatom. rewrite !t_interp_wf. rewrite H2. simpl. unfold interp_bop. rewrite H3. simpl. rewrite !t_interp_wf. rewrite H4. rewrite H6. simpl. unfold interp_cop. rewrite H5. rewrite H7. simpl. rewrite Int63Properties.eqb_spec. simpl. split.
+      apply to_list_In. rewrite H. reflexivity.
+      trivial.
+      apply wf_t_atom. apply def_t_atom.
+      apply wf_t_atom. apply def_t_atom.
+      apply wf_t_atom. apply def_t_atom.
+
+      apply Int63Properties.eqb_false_spec in H9. apply bit_eq_false in H9. inversion H9. destruct H10.
+      exists (lits.[x+1]).
+      split. apply (to_list_In lits (x+1)). rewrite H. rewrite inf_plus_un. trivial. reflexivity. apply H11.
+      
+      unfold Lit.interp. assert (H12 := H8 (x+1)). rewrite H in H12. rewrite inf_plus_un in H12. 
+
+      assert ( (true = true ->
+      (if x + 1 == 0
+       then Lit.is_pos (lits .[ x + 1])
+       else
+        match t_form .[ Lit.blit (lits .[ x + 1])] with
+        | Fatom _ => false
+        | Ftrue => false
+        | Ffalse => false
+        | Fnot2 _ _ => false
+        | Fand _ => false
+        | For _ => false
+        | Fimp _ => false
+        | Fxor _ _ => false
+        | Fiff l1 l2 =>
+            match t_form .[ Lit.blit l1] with
+            | Fatom a1 =>
+                match t_form .[ Lit.blit l2] with
+                | Fatom a2 =>
+                    match t_atom .[ a1] with
+                    | Acop _ => false
+                    | Auop UO_xO _ => false
+                    | Auop UO_xI _ => false
+                    | Auop UO_Zpos _ => false
+                    | Auop UO_Zneg _ => false
+                    | Auop UO_Zopp _ => false
+                    | Auop (UO_index j) hx1 =>
+                        match t_atom .[ a2] with
+                        | Acop _ => false
+                        | Auop UO_xO _ => false
+                        | Auop UO_xI _ => false
+                        | Auop UO_Zpos _ => false
+                        | Auop UO_Zneg _ => false
+                        | Auop UO_Zopp _ => false
+                        | Auop (UO_index k) hy1 =>
+                            match t_atom .[ hx1] with
+                            | Acop CO_xH => false
+                            | Acop CO_Z0 => false
+                            | Acop (CO_int x1) =>
+                                match t_atom .[ hy1] with
+                                | Acop CO_xH => false
+                                | Acop CO_Z0 => false
+                                | Acop (CO_int y1) =>
+                                    Lit.is_pos l1 && Lit.is_pos l2 &&
+                                    negb (Lit.is_pos (lits .[ x + 1])) &&
+                                    (j == x + 1 - 1) && (k == j) &&
+                                    (i2 == x1) && (i3 == y1)
+                                | Auop _ _ => false
+                                | Abop _ _ _ => false
+                                | Anop _ _ => false
+                                | Aapp _ _ => false
+                                end
+                            | Auop _ _ => false
+                            | Abop _ _ _ => false
+                            | Anop _ _ => false
+                            | Aapp _ _ => false
+                            end
+                        | Abop _ _ _ => false
+                        | Anop _ _ => false
+                        | Aapp _ _ => false
+                        end
+                    | Abop _ _ _ => false
+                    | Anop _ _ => false
+                    | Aapp _ _ => false
+                    end
+                | Ftrue => false
+                | Ffalse => false
+                | Fnot2 _ _ => false
+                | Fand _ => false
+                | For _ => false
+                | Fimp _ => false
+                | Fxor _ _ => false
+                | Fiff _ _ => false
+                | Fite _ _ _ => false
+                end
+            | Ftrue => false
+            | Ffalse => false
+            | Fnot2 _ _ => false
+            | Fand _ => false
+            | For _ => false
+            | Fimp _ => false
+            | Fxor _ _ => false
+            | Fiff _ _ => false
+            | Fite _ _ _ => false
+            end
+        | Fite _ _ _ => false
+        end) = true) -> (if x + 1 == 0
+       then Lit.is_pos (lits .[ x + 1])
+       else
+        match t_form .[ Lit.blit (lits .[ x + 1])] with
+        | Fatom _ => false
+        | Ftrue => false
+        | Ffalse => false
+        | Fnot2 _ _ => false
+        | Fand _ => false
+        | For _ => false
+        | Fimp _ => false
+        | Fxor _ _ => false
+        | Fiff l1 l2 =>
+            match t_form .[ Lit.blit l1] with
+            | Fatom a1 =>
+                match t_form .[ Lit.blit l2] with
+                | Fatom a2 =>
+                    match t_atom .[ a1] with
+                    | Acop _ => false
+                    | Auop UO_xO _ => false
+                    | Auop UO_xI _ => false
+                    | Auop UO_Zpos _ => false
+                    | Auop UO_Zneg _ => false
+                    | Auop UO_Zopp _ => false
+                    | Auop (UO_index j) hx1 =>
+                        match t_atom .[ a2] with
+                        | Acop _ => false
+                        | Auop UO_xO _ => false
+                        | Auop UO_xI _ => false
+                        | Auop UO_Zpos _ => false
+                        | Auop UO_Zneg _ => false
+                        | Auop UO_Zopp _ => false
+                        | Auop (UO_index k) hy1 =>
+                            match t_atom .[ hx1] with
+                            | Acop CO_xH => false
+                            | Acop CO_Z0 => false
+                            | Acop (CO_int x1) =>
+                                match t_atom .[ hy1] with
+                                | Acop CO_xH => false
+                                | Acop CO_Z0 => false
+                                | Acop (CO_int y1) =>
+                                    Lit.is_pos l1 && Lit.is_pos l2 &&
+                                    negb (Lit.is_pos (lits .[ x + 1])) &&
+                                    (j == x + 1 - 1) && (k == j) &&
+                                    (i2 == x1) && (i3 == y1)
+                                | Auop _ _ => false
+                                | Abop _ _ _ => false
+                                | Anop _ _ => false
+                                | Aapp _ _ => false
+                                end
+                            | Auop _ _ => false
+                            | Abop _ _ _ => false
+                            | Anop _ _ => false
+                            | Aapp _ _ => false
+                            end
+                        | Abop _ _ _ => false
+                        | Anop _ _ => false
+                        | Aapp _ _ => false
+                        end
+                    | Abop _ _ _ => false
+                    | Anop _ _ => false
+                    | Aapp _ _ => false
+                    end
+                | Ftrue => false
+                | Ffalse => false
+                | Fnot2 _ _ => false
+                | Fand _ => false
+                | For _ => false
+                | Fimp _ => false
+                | Fxor _ _ => false
+                | Fiff _ _ => false
+                | Fite _ _ _ => false
+                end
+            | Ftrue => false
+            | Ffalse => false
+            | Fnot2 _ _ => false
+            | Fand _ => false
+            | For _ => false
+            | Fimp _ => false
+            | Fxor _ _ => false
+            | Fiff _ _ => false
+            | Fite _ _ _ => false
+            end
+        | Fite _ _ _ => false
+        end) = true).
+        intros. apply H13. trivial. apply H13 in H12.
+        clear H13.
+        assert (x + 1 == 0 = false).
+        apply eqb_false_spec.
+        apply not_0_ltb.
+        apply succ_max_int.
+        assert (digits < max_int = true).
+        reflexivity.
+        apply (ltb_trans x digits max_int).
+        apply H11. apply H13.
+        rewrite H13 in H12.
+        case_eq (t_form .[ Lit.blit (lits .[ x + 1])]); intros; rewrite H14 in H12; try (apply diff_false_true in H12; inversion H12).
+        case_eq (t_form .[ Lit.blit i4]); intros; rewrite H15 in H12; try (apply diff_false_true in H12; inversion H12).
+        case_eq (t_form .[ Lit.blit i5]); intros; rewrite H16 in H12; try (apply diff_false_true in H12; inversion H12).
+        case_eq (t_atom .[i6]); intros; rewrite H17 in H12; try (apply diff_false_true in H12; inversion H12).
+ simpl in H12.
       
     Qed.
  
