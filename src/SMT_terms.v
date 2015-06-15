@@ -42,7 +42,8 @@ Module Form.
   | Fxor (_:_lit) (_:_lit)
   | Fiff (_:_lit) (_:_lit)
   | Fite (_:_lit) (_:_lit) (_:_lit)
-  | Fand_int (_:fargs).
+  .
+  (* | Fand_int (_:fargs). *)
 
   Definition is_Ftrue h :=
     match h with Ftrue => true | _ => false end.
@@ -81,7 +82,7 @@ Module Form.
         | Fite a b c =>
           if Lit.interp interp_var a then Lit.interp interp_var b
           else Lit.interp interp_var c
-        | Fand_int args => afold_left _ _ max_int land (Lit.interp interp_var) args
+        (* | Fand_int args => afold_left _ _ max_int land (Lit.interp interp_var) args *)
         end.
 
     End Interp_form.

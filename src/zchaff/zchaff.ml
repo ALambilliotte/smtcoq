@@ -265,7 +265,7 @@ let checker fdimacs ftrace =
 
   
 (******************************************************************************)
-(** Given a Coq formula build the proof                                       *)
+(** Utilities to call zchaff on various kinds of goals                        *)
 (******************************************************************************)
 
 let export_clause fmt cl =
@@ -330,6 +330,69 @@ let call_zchaff nvars root =
   (reloc, resfilename, logfilename, last)
 
 
+(* Check that the result is Unsat, otherwise raise a model *)
+
+exception Sat of int list
+exception Finished
+
+let input_int file =
+  let rec input_int acc flag =
+    let c = input_char file in
+    if c = '-' then
+      input_int acc true
+    else if c = '0' then
+      input_int (10*acc) flag
+    else if c = '1' then
+      input_int (10*acc+1) flag
+    else if c = '2' then
+      input_int (10*acc+2) flag
+    else if c = '3' then
+      input_int (10*acc+3) flag
+    else if c = '4' then
+      input_int (10*acc+4) flag
+    else if c = '5' then
+      input_int (10*acc+5) flag
+    else if c = '6' then
+      input_int (10*acc+6) flag
+    else if c = '7' then
+      input_int (10*acc+7) flag
+    else if c = '8' then
+      input_int (10*acc+8) flag
+    else if c = '9' then
+      input_int (10*acc+9) flag
+    else if c = ' ' then
+      if flag then -acc else acc
+    else raise Finished in
+  input_int 0 false
+
+let check_unsat filename =
+  let f = open_in filename in
+  let rec get_model acc =
+    try
+      let i = input_int f in
+      get_model (i::acc)
+    with
+      | Finished -> acc in
+  try
+    while true do
+      let l = input_line f in
+      let n = String.length l in
+      if n >= 8 && String.sub l 0 8 = "Instance" then
+        if n >= 20 && String.sub l 9 11 = "Satisfiable" then
+          raise (Sat (get_model []))
+        else
+          raise End_of_file
+    done
+  with
+    | End_of_file -> close_in f
+
+
+
+
+(******************************************************************************)
+(** Given a Coq formula build the proof (SAT+CNF computation)                 *)
+(******************************************************************************)
+
 (* Build the problem that it may be understoof by zchaff *)
 
 let cnf_checker_modules = [ ["SMTCoq";"Trace";"Cnf_Checker"] ]
@@ -391,63 +454,6 @@ let get_arguments concl =
   | [ty;a;b] when f = Lazy.force ceq && ty = Lazy.force cbool -> a, b
   | [a] when f = Lazy.force cis_true -> a, Lazy.force ctrue
   | _ -> failwith ("Zchaff.tactic :can only deal with equality over bool")
-
-
-(* Check that the result is Unsat, otherwise raise a model *)
-
-exception Sat of int list
-exception Finished
-
-let input_int file =
-  let rec input_int acc flag =
-    let c = input_char file in
-    if c = '-' then
-      input_int acc true
-    else if c = '0' then
-      input_int (10*acc) flag
-    else if c = '1' then
-      input_int (10*acc+1) flag
-    else if c = '2' then
-      input_int (10*acc+2) flag
-    else if c = '3' then
-      input_int (10*acc+3) flag
-    else if c = '4' then
-      input_int (10*acc+4) flag
-    else if c = '5' then
-      input_int (10*acc+5) flag
-    else if c = '6' then
-      input_int (10*acc+6) flag
-    else if c = '7' then
-      input_int (10*acc+7) flag
-    else if c = '8' then
-      input_int (10*acc+8) flag
-    else if c = '9' then
-      input_int (10*acc+9) flag
-    else if c = ' ' then
-      if flag then -acc else acc
-    else raise Finished in
-  input_int 0 false
-
-let check_unsat filename =
-  let f = open_in filename in
-  let rec get_model acc =
-    try
-      let i = input_int f in
-      get_model (i::acc)
-    with
-      | Finished -> acc in
-  try
-    while true do
-      let l = input_line f in
-      let n = String.length l in
-      if n >= 8 && String.sub l 0 8 = "Instance" then
-        if n >= 20 && String.sub l 9 11 = "Satisfiable" then
-          raise (Sat (get_model []))
-        else
-          raise End_of_file
-    done
-  with
-    | End_of_file -> close_in f
 
 
 (* Pre-process the proof given by zchaff *)
@@ -515,3 +521,11 @@ let tactic gl =
     List.fold_left (fun t rd -> Term.mkLambda_or_LetIn rd t) body forall_let in
   let res = compose_lam_assum forall_let body in
   Tactics.exact_no_check res gl
+
+
+
+
+
+(******************************************************************************)
+(** Decision procedure for machine integers (via bit blasting)                *)
+(******************************************************************************)

@@ -357,7 +357,7 @@ Lemma step_checker_correct : forall rho t_form t_atom,
     apply valid_check_BuildProj; auto.
     apply valid_check_ImmBuildDef; auto.
     apply valid_check_ImmBuildDef2; auto.
-    apply valid_check_ImmBuildProj; auto.(*
+    apply valid_check_ImmBuildProj; auto. (*
     apply valid_check_BuildDefInt; auto.
     apply valid_check_BuildProjInt; auto.*)
     admit.
