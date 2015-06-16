@@ -305,8 +305,9 @@ Module Cnf_Checker.
 
 End Cnf_Checker.
 
-Module Cnf_CheckerInt.
-  
+
+Module Int_Checker.
+
   Inductive step :=
   | Res (pos:int) (res:resolution)
   | ImmFlatten (pos:int) (cid:clause_id) (lf:_lit) 
@@ -325,7 +326,7 @@ Module Cnf_CheckerInt.
 
   Local Notation check_flatten t_form := (check_flatten t_form (fun i1 i2 => i1 == i2) (fun _ _ => false)) (only parsing).
 
-  Definition step_checker t_form t_atom s (st:step) :=
+  Definition step_checker t_atom t_form s (st:step) :=
     match st with
     | Res pos res => S.set_resolve s pos res
     | ImmFlatten pos cid lf => S.set_clause s pos (check_flatten t_form s cid lf) 
@@ -341,15 +342,18 @@ Module Cnf_CheckerInt.
     | BuildProjInt pos l i => S.set_clause s pos (check_BuildProjInt t_form t_atom l i)
     end.
 
-Lemma step_checker_correct : forall rho t_form t_atom,
-    Form.check_form t_form -> Atom.check_atom t_atom ->
-    forall s, S.valid (Form.interp_state_var rho t_form) s ->
-      forall st : step, S.valid (Form.interp_state_var rho t_form)
-        (step_checker t_form t_atom s st).
+  Lemma step_checker_correct : forall t_i t_func t_atom t_form,
+    let rho := Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form in
+      Form.check_form t_form -> Atom.check_atom t_atom ->
+      Atom.wt t_i t_func t_atom ->
+      forall s, S.valid rho s ->
+        forall st : step, S.valid rho (step_checker t_atom t_form s st).
   Proof.
-    intros rho t_form t_atom Ht s H; destruct (Form.check_form_correct rho _ Ht) as [[Ht1 Ht2] Ht3];intro;intros [pos res|pos cid lf|pos|pos|pos l|pos l|pos l i|pos cid|pos cid|pos cid i|pos l|pos l i]; simpl; try apply S.valid_set_clause; auto.
+    intros t_i t_func t_atom t_form rho H1 H2 H10 s Hs. destruct (Form.check_form_correct (Atom.interp_form_hatom t_i t_func t_atom) _ H1) as [[Ht1 Ht2] Ht3]. destruct (Atom.check_atom_correct _ H2) as [Ha1 Ha2]. intros [pos res|pos cid lf|pos|pos|pos l|pos l|pos l i|pos cid|pos cid|pos cid i|pos l|pos l i]; simpl; try apply S.valid_set_clause; auto.
     apply S.valid_set_resolve; auto.
-    apply valid_check_flatten; auto; try discriminate; intros a1 a2; unfold is_true; rewrite Int63Properties.eqb_spec; intro; subst a1; auto.
+    apply valid_check_flatten; auto; intros h1 h2 H.
+      unfold is_true in H. rewrite eqb_spec in H. now subst h2.
+      discriminate.
     apply valid_check_True; auto.
     apply valid_check_False; auto.
     apply valid_check_BuildDef; auto.
@@ -357,78 +361,102 @@ Lemma step_checker_correct : forall rho t_form t_atom,
     apply valid_check_BuildProj; auto.
     apply valid_check_ImmBuildDef; auto.
     apply valid_check_ImmBuildDef2; auto.
-    apply valid_check_ImmBuildProj; auto. (*
+    apply valid_check_ImmBuildProj; auto.
     apply valid_check_BuildDefInt; auto.
-    apply valid_check_BuildProjInt; auto.*)
-    admit.
-    admit.
+    apply valid_check_BuildProjInt; auto.
   Qed.
 
+  Definition int_checker t_atom t_form s t :=
+    _checker_ (step_checker t_atom t_form) s t.
 
-  Definition cnf_checker t_form t_atom s t :=
-    _checker_ (step_checker t_form t_atom) s t.
-
-
-  Lemma cnf_checker_correct : forall rho t_form t_atom,
-    Form.check_form t_form -> Atom.check_atom t_atom ->
-    forall s t confl,
-      cnf_checker t_form t_atom C.is_false s t confl ->
-      ~ (S.valid (Form.interp_state_var rho t_form) s).
+  Lemma int_checker_correct : forall t_i t_func t_atom t_form,
+    let rho := Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form in
+      Form.check_form t_form -> Atom.check_atom t_atom ->
+      Atom.wt t_i t_func t_atom ->
+      forall s t confl,
+        int_checker t_atom t_form C.is_false s t confl ->
+        ~ (S.valid rho s).
   Proof.
-    unfold cnf_checker; intros rho t_form t_atom Ht Ht1; apply _checker__correct.
+    unfold int_checker; intros t_i t_func t_atom t_form rho H1 H2 H10; apply _checker__correct.
     intros c H; apply C.is_false_correct; auto.
     apply step_checker_correct; auto.
   Qed.
 
+  Inductive certif :=
+  | Certif : int -> _trace_ step -> int -> certif.
 
- Inductive certif :=
-   | Certif : int -> _trace_ step -> int -> certif.
+  Definition add_roots s d used_roots :=
+    match used_roots with
+      | Some ur => PArray.foldi_right (fun i c_index s =>
+        let c := if c_index < length d then (d.[c_index])::nil else C._true in
+          S.set_clause s i c) ur s
+      | None => PArray.foldi_right (fun i c s => S.set_clause s i (c::nil)) d s
+    end.
 
- Definition checker t_form t_atom l (c:certif) :=
-   let (nclauses, t, confl) := c in   
-   Form.check_form t_form && Atom.check_atom t_atom &&
-   cnf_checker t_form t_atom C.is_false (S.set_clause (S.make nclauses) 0 (l::nil)) t confl.
+  Definition valid t_i t_func t_atom t_form d :=
+    let rho := Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form in
+    afold_left _ _ true andb (Lit.interp rho) d.
 
+  Lemma add_roots_correct : forall t_i t_func t_atom t_form,
+    let rho := Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form in
+      Form.check_form t_form -> Atom.check_atom t_atom ->
+      Atom.wt t_i t_func t_atom ->
+      forall s d used_roots, S.valid rho s -> valid t_func t_atom t_form d ->
+        S.valid rho (add_roots s d used_roots).
+  Proof.
+    intros t_i t_func t_atom t_form rho H1 H2 H10 s d used_roots H3; unfold valid; intro H4; pose (H5 := (afold_left_andb_true_inv _ _ _ H4)); unfold add_roots; assert (Valuation.wf rho) by (destruct (Form.check_form_correct (Atom.interp_form_hatom t_i t_func t_atom) _ H1) as [_ H]; auto); case used_roots.
+    intro ur; apply (foldi_right_Ind _ _ (fun _ a => S.valid rho a)); auto; intros a i H6 Ha; apply S.valid_set_clause; auto; case_eq (ur .[ i] < length d).
+    intro; unfold C.valid; simpl; rewrite H5; auto.
+    intros; apply C.interp_true; auto.
+    apply (foldi_right_Ind _ _ (fun _ a => S.valid rho a)); auto; intros a i H6 Ha; apply S.valid_set_clause; auto; unfold C.valid; simpl; rewrite H5; auto.
+  Qed.
 
- Lemma checker_correct : forall t_form t_atom l c,
-    checker t_form t_atom l c = true ->
-    forall rho, ~ (Lit.interp (Form.interp_state_var rho t_form) l).
- Proof.
-   unfold checker. intros t_form t_atom l (nclauses, t, confl); unfold is_true; rewrite andb_true_iff; intros [H1 H2] rho H. apply andb_true_iff in H1. destruct H1. apply (cnf_checker_correct (rho:=rho) H0 H1 H2). destruct (Form.check_form_correct rho _ H0) as [[Ht1 Ht2] Ht3]; apply S.valid_set_clause; auto.
-   apply S.valid_make; auto.
-   unfold C.valid; simpl; rewrite H; auto.
+  Definition checker t_i t_func t_atom t_form d used_roots (c:certif) :=
+    let (nclauses, t, confl) := c in
+    Form.check_form t_form && Atom.check_atom t_atom &&
+    Atom.wt t_i t_func t_atom &&
+    int_checker t_atom t_form C.is_false (add_roots (S.make nclauses) d used_roots) t confl.
+  Implicit Arguments checker [].
+
+  Lemma checker_correct : forall t_i t_func t_atom t_form d used_roots c,
+    checker t_i t_func t_atom t_form d used_roots c = true ->
+    ~ valid t_func t_atom t_form d.
+  Proof.
+    unfold checker; intros t_i t_func t_atom t_form d used_roots (nclauses, t, confl); rewrite !andb_true_iff; intros [[[H1 H2] H10] H3] H; eelim int_checker_correct; try eassumption; apply add_roots_correct; try eassumption; apply S.valid_make; destruct (Form.check_form_correct (Atom.interp_form_hatom t_i t_func t_atom) _ H1) as [_ H4]; auto.
+  Qed.
+
+  Definition checker_b t_i t_func t_atom t_form l (b:bool) (c:certif) :=
+    let l := if b then Lit.neg l else l in
+    let (nclauses,_,_) := c in
+    checker t_i t_func t_atom t_form (PArray.make nclauses l) None c.
+
+  Lemma checker_b_correct : forall t_i t_func t_atom t_form l b c,
+    checker_b t_func t_atom t_form l b c = true ->
+    Lit.interp (Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form) l = b.
+  Proof.
+   unfold checker_b; intros t_i t_func t_atom t_form l b (nclauses, t, confl); case b; intros H2; case_eq (Lit.interp (Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form) l); auto; intros H1; elim (checker_correct H2 (t_func:=t_func)); auto; unfold valid; apply afold_left_andb_true; intros i Hi; rewrite get_make; auto; rewrite Lit.interp_neg, H1; auto.
  Qed.
 
- Definition checker_b t_form t_atom l (b:bool) (c:certif) :=
-   let l := if b then Lit.neg l else l in
-   checker t_form t_atom l c.
+  Definition checker_eq t_i t_func t_atom t_form l1 l2 l (c:certif) :=
+    negb (Lit.is_pos l) &&
+    match t_form.[Lit.blit l] with
+      | Form.Fiff l1' l2' => (l1 == l1') && (l2 == l2')
+      | _ => false
+    end &&
+    let (nclauses,_,_) := c in
+    checker t_i t_func t_atom t_form (PArray.make nclauses l) None c.
 
- Lemma checker_b_correct : forall t_var t_form t_atom l b c,
-    checker_b t_form t_atom l b c = true ->
-    Lit.interp (Form.interp_state_var (PArray.get t_var) t_form) l = b.
- Proof.
-   unfold checker_b; intros t_var t_form t_atom l b c. case b; case_eq (Lit.interp (Form.interp_state_var (get t_var) t_form) l); auto; intros H1 H2; elim (checker_correct H2 (rho:=get t_var)); auto; rewrite Lit.interp_neg, H1; auto.
+  Lemma checker_eq_correct : forall t_i t_func t_atom t_form l1 l2 l c,
+    checker_eq t_func t_atom t_form l1 l2 l c = true ->
+    Lit.interp (Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form) l1 =
+    Lit.interp (Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form) l2.
+  Proof.
+   unfold checker_eq; intros t_i t_func t_atom t_form l1 l2 l (nclauses, t, confl); rewrite !andb_true_iff; case_eq (t_form .[ Lit.blit l]); [intros _ _|intros _|intros _|intros _ _ _|intros _ _|intros _ _|intros _ _|intros _ _ _|intros l1' l2' Heq|intros _ _ _ _]; intros [[H1 H2] H3]; try discriminate; rewrite andb_true_iff in H2; rewrite !Int63Properties.eqb_spec in H2; destruct H2 as [H2 H4]; subst l1' l2'; case_eq (Lit.is_pos l); intro Heq'; rewrite Heq' in H1; try discriminate; clear H1; assert (H:PArray.default t_form = Form.Ftrue /\ Form.wf t_form).
+   unfold checker in H3; rewrite !andb_true_iff in H3; destruct H3 as [[[H3 _] _] _]; destruct (Form.check_form_correct (Atom.interp_form_hatom t_i t_func t_atom) _ H3) as [[Ht1 Ht2] Ht3]; split; auto.
+   destruct H as [H1 H2]; case_eq (Lit.interp (Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form) l1); intro Heq1; case_eq (Lit.interp (Form.interp_state_var (Atom.interp_form_hatom t_i t_func t_atom) t_form) l2); intro Heq2; auto; elim (checker_correct H3 (t_func:=t_func)); unfold valid; apply afold_left_andb_true; intros i Hi; rewrite get_make; unfold Lit.interp; rewrite Heq'; unfold Var.interp; rewrite Form.wf_interp_form; auto; rewrite Heq; simpl; rewrite Heq1, Heq2; auto.
  Qed.
 
- Definition checker_eq t_form t_atom l1 l2 l (c:certif) :=
-   negb (Lit.is_pos l) && 
-   match t_form.[Lit.blit l] with
-   | Form.Fiff l1' l2' => (l1 == l1') && (l2 == l2')
-   | _ => false
-   end && 
-   checker t_form t_atom l c.
-
- Lemma checker_eq_correct : forall t_var t_form t_atom l1 l2 l c,
-   checker_eq t_form t_atom l1 l2 l c = true ->
-    Lit.interp (Form.interp_state_var (PArray.get t_var) t_form) l1 =
-    Lit.interp (Form.interp_state_var (PArray.get t_var) t_form) l2.
- Proof.
-   unfold checker_eq; intros t_var t_form t_atom l1 l2 l c; rewrite !andb_true_iff; case_eq (t_form .[ Lit.blit l]); [intros _ _|intros _|intros _|intros _ _ _|intros _ _|intros _ _|intros _ _|intros _ _ _|intros l1' l2' Heq|intros _ _ _ _]; intros [[H1 H2] H3]; try discriminate; rewrite andb_true_iff in H2; rewrite !Int63Properties.eqb_spec in H2; destruct H2 as [H2 H4]; subst l1' l2'; case_eq (Lit.is_pos l); intro Heq'; rewrite Heq' in H1; try discriminate; clear H1; assert (H:PArray.default t_form = Form.Ftrue /\ Form.wf t_form).
-   unfold checker in H3; destruct c as (nclauses, t, confl); rewrite andb_true_iff in H3; destruct H3 as [H3 _]; apply andb_true_iff in H3. destruct H3. destruct (Form.check_form_correct (get t_var) _ H) as [[Ht1 Ht2] Ht3]; split; auto.
-   destruct H as [H1 H2]; case_eq (Lit.interp (Form.interp_state_var (get t_var) t_form) l1); intro Heq1; case_eq (Lit.interp (Form.interp_state_var (get t_var) t_form) l2); intro Heq2; auto; elim (checker_correct H3 (rho:=get t_var)); unfold Lit.interp; rewrite Heq'; unfold Var.interp; rewrite Form.wf_interp_form; auto; rewrite Heq; simpl; rewrite Heq1, Heq2; auto.
- Qed.
-
-End Cnf_CheckerInt.
+End Int_Checker.
 
 
 (* Application to resolution + cnf justification + euf + lia *)

@@ -180,7 +180,8 @@ Section Checker.
               (t_func : array (Atom.tval t_i))
               (ch_atom : Atom.check_atom t_atom)
               (ch_form : Form.check_form t_form)
-              (wt_t_atom : Atom.wt t_i t_func t_atom).
+              .
+              (* (wt_t_atom : Atom.wt t_i t_func t_atom). *)
 
     Local Notation check_atom :=
       (check_aux t_i t_func (get_type t_i t_func t_atom)).
