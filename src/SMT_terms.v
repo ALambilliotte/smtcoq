@@ -259,6 +259,8 @@ Section Unit_typ_eqb.
   Definition unit_typ_eqb :=
     Typ_eqb carrier eqb unit_reflect.
 
+  Definition empty_t_i : PArray.array typ_eqb := PArray.make 0 unit_typ_eqb.
+
 End Unit_typ_eqb.
 (* End TODO *)
 
@@ -659,6 +661,13 @@ Module Atom.
     Definition Bval := Val Typ.type interp_t.
     Definition tval := val Typ.ftype interp_ft.
     Definition Tval := Val Typ.ftype interp_ft.
+
+    (* Transforms a bval, interpreting constants, into a tval,
+       interpreting 0-ary functions *)
+    Definition tval_cst (b:bval) : tval :=
+      match b with
+      | Val A v => Tval (nil, A) v
+      end.
 
     Definition bvtrue : bval := Bval Typ.Tbool true.
     Definition bvfalse : bval := Bval Typ.Tbool false.
@@ -1353,6 +1362,11 @@ Module Atom.
       fun a => interp_bool (interp a).
 
   End Typing_Interp.
+
+  Definition bval_empty_t_i := bval empty_t_i.
+  Definition Bval_empty_t_i := Bval empty_t_i.
+  Definition tval_cst_empty_t_i (x:bval_empty_t_i) := tval_cst _ x.
+  Definition t_func_cst_empty_t_i (x:PArray.array (bval_empty_t_i)) := PArray.map tval_cst_empty_t_i x.
 
   Definition check_atom t_atom :=
     match default t_atom with

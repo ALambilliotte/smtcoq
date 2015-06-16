@@ -221,6 +221,8 @@ module Atom =
 
     let atom h = h.hval
     let index h = h.index
+    let build i = {index = i; hval = assert false}
+
 
     let equal h1 h2 = h1.index == h2.index
 
@@ -397,6 +399,6 @@ module Atom =
   end
 
 
-module Form = SmtForm.Make(Atom)
+module Form = SmtForm.MakeSat(Atom)
 module Trace = SmtTrace.MakeOpt(Form)
 module Cnf = SmtCnf.MakeCnf(Form)

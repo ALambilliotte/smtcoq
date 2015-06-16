@@ -22,6 +22,7 @@ module Atom =
     type t = int 
 
     let index a = a
+    let build a = a
 
     let equal a1 a2 = a1 == a2
 
@@ -57,7 +58,7 @@ module Atom =
 
   end
 
-module Form = SmtForm.Make(Atom)
+module Form = SmtForm.MakeSat(Atom)
 module Trace = SmtTrace.MakeOpt(Form)
 module Cnf = SmtCnf.MakeCnf(Form)
 

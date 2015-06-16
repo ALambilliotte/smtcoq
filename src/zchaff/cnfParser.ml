@@ -16,6 +16,8 @@
 open SatParser
 
 
+module Parser (Form:SmtForm.SATFORM) = struct
+
 let skip_comment lb =
   while blank_check_string lb "c" do skip_line lb done
 
@@ -31,8 +33,8 @@ let mklit nvars reify l =
   let sign = l > 0 in
   let x = (if sign then l else - l) - 1 in
   assert (0 <= x && x < nvars); 
-  let p = SatAtom.Form.get reify (SmtForm.Fatom x) in
-  if sign then p else SatAtom.Form.neg p
+  let p = Form.get reify (SmtForm.Fatom (Form.hatom_build x)) in
+  if sign then p else Form.neg p
 
 let rec parse_clause nvars reify lb =
   let i = input_blank_int lb in
@@ -47,7 +49,7 @@ let rec parse_clauses nvars reify lb last =
   else last 
 
 let parse_cnf filename =
-  let reify = SatAtom.Form.create () in
+  let reify = Form.create () in
   let lb = open_file "CNF" filename in
   let nvars = parse_p_cnf lb in
   let first = SmtTrace.mkRootV (parse_clause nvars reify lb) in
@@ -55,3 +57,4 @@ let parse_cnf filename =
   close lb;
   nvars, first, last
 
+end

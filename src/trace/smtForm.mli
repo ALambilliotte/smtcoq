@@ -26,6 +26,12 @@ module type ATOM =
   end 
 
 
+module type SATATOM = sig
+  include ATOM
+  val build : int -> t
+end
+
+
 type fop =
   | Ftrue
   | Ffalse
@@ -47,6 +53,8 @@ module type FORM =
     type hatom 
     type t
     type pform = (hatom, t) gen_pform
+
+      val hatom_index : hatom -> int
 
       val pform_true : pform
       val pform_false : pform
@@ -94,6 +102,14 @@ module type FORM =
 	    t -> Term.constr
   end
 
+
+module type SATFORM = sig
+  include FORM
+  val hatom_build : int -> hatom
+end
+
+
 module Make (Atom:ATOM) : FORM with type hatom = Atom.t
+module MakeSat (Atom:SATATOM) : SATFORM with type hatom = Atom.t
 
 	

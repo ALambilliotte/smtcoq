@@ -18,15 +18,15 @@ VERNAC COMMAND EXTEND Parse_certif_zchaff
 | [ "Parse_certif_zchaff" 
     ident(dimacs) ident(trace) string(fdimacs) string(fproof) ] ->
   [
-    Zchaff.parse_certif dimacs trace fdimacs fproof
+    Zchaff.CNF.parse_certif dimacs trace fdimacs fproof
   ]
 | [ "Zchaff_Checker" string(fdimacs) string(fproof) ] ->
   [
-    Zchaff.checker fdimacs fproof
+    Zchaff.CNF.checker fdimacs fproof
   ]
 | [ "Zchaff_Theorem" ident(name) string(fdimacs) string(fproof) ] ->
   [
-    Zchaff.theorem name fdimacs fproof
+    Zchaff.CNF.theorem name fdimacs fproof
   ] 
 END
 
@@ -48,6 +48,7 @@ END
 
 TACTIC EXTEND zchaff
 | [ "zchaff" ] -> [ Zchaff.tactic ]
+| [ "int_decide" ] -> [ Zchaff.int_decide ]
 END
 
 TACTIC EXTEND verit

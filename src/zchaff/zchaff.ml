@@ -23,9 +23,14 @@ open CoqTerms
 open SmtForm
 open SmtCertif
 open SmtTrace
-open SatAtom
+(* open SatAtom *)
 open SmtMisc
 
+
+module ZChaff (Form:SATFORM) = struct
+
+  module Trace = SmtTrace.MakeOpt(Form)
+  module CnfParser = CnfParser.Parser(Form)
 
 (* Detection of trivial clauses *)
 
@@ -39,65 +44,65 @@ let rec is_trivial cl =
 
 (* Pretty printing *)
 
-let string_of_op = function
-  | Ftrue -> "true"
-  | Ffalse -> "false"
-  | Fand -> "and"
-  | For -> "or"
-  | Fxor -> "xor"
-  | Fimp -> "imp"
-  | Fiff -> "iff"
-  | Fite -> "ite"
-  | Fnot2 i -> "!"^string_of_int i
+(* let string_of_op = function *)
+(*   | Ftrue -> "true" *)
+(*   | Ffalse -> "false" *)
+(*   | Fand -> "and" *)
+(*   | For -> "or" *)
+(*   | Fxor -> "xor" *)
+(*   | Fimp -> "imp" *)
+(*   | Fiff -> "iff" *)
+(*   | Fite -> "ite" *)
+(*   | Fnot2 i -> "!"^string_of_int i *)
 
-let rec pp_form fmt l = 
-  Format.fprintf fmt "(#%i %a %a)" (Form.to_lit l)pp_sign l pp_pform (Form.pform l)
-and pp_sign fmt l = 
-  if Form.is_pos l then () 
-  else Format.fprintf fmt "-"
-and pp_pform fmt p = 
-  match p with
-  | Fatom x -> Format.fprintf fmt "x%i" x
-  | Fapp(op,args) ->
-      Format.fprintf fmt "%s" (string_of_op op);
-      Array.iter (fun a -> Format.fprintf fmt "%a " pp_form a) args
+(* let rec pp_form fmt l =  *)
+(*   Format.fprintf fmt "(#%i %a %a)" (Form.to_lit l)pp_sign l pp_pform (Form.pform l) *)
+(* and pp_sign fmt l =  *)
+(*   if Form.is_pos l then ()  *)
+(*   else Format.fprintf fmt "-" *)
+(* and pp_pform fmt p =  *)
+(*   match p with *)
+(*   | Fatom x -> Format.fprintf fmt "x%i" x *)
+(*   | Fapp(op,args) -> *)
+(*       Format.fprintf fmt "%s" (string_of_op op); *)
+(*       Array.iter (fun a -> Format.fprintf fmt "%a " pp_form a) args *)
 
-let pp_value fmt c = 
-  match c.value with
-  | Some cl ->
-      Format.fprintf fmt "VAL = {";
-      List.iter (Format.fprintf fmt "%a " pp_form) cl;
-      Format.fprintf fmt "}@."
-  | _ -> Format.fprintf fmt "Val = empty@."
+(* let pp_value fmt c =  *)
+(*   match c.value with *)
+(*   | Some cl -> *)
+(*       Format.fprintf fmt "VAL = {"; *)
+(*       List.iter (Format.fprintf fmt "%a " pp_form) cl; *)
+(*       Format.fprintf fmt "}@." *)
+(*   | _ -> Format.fprintf fmt "Val = empty@." *)
 
 
-let pp_kind fmt c = 
-  match c.kind with
-  | Root -> Format.fprintf fmt "Root"
-  | Res res -> 
-      Format.fprintf fmt "(Res %i %i " res.rc1.id res.rc2.id;
-      List.iter (fun c -> Format.fprintf fmt "%i " c.id) res.rtail;
-      Format.fprintf fmt ") "
-  | Other other ->
-    begin match other with
-    | ImmFlatten (c,l) -> 
-	Format.fprintf fmt "(ImmFlatten %i %a)"
-	  c.id pp_form l
-    | True -> Format.fprintf fmt "True"
-    | False -> Format.fprintf fmt "False"
-    | BuildDef l -> Format.fprintf fmt "(BuildDef %a)" pp_form l
-    | BuildDef2 l -> Format.fprintf fmt "(BuildDef2 %a)" pp_form l
-    | BuildProj (l,i) -> Format.fprintf fmt "(BuildProj %a %i)" pp_form l i
-    | ImmBuildProj (c,i) ->Format.fprintf fmt "(ImmBuildProj %i %i)" c.id i
-    | ImmBuildDef c -> Format.fprintf fmt "(ImmBuildDef %i)" c.id
-    | ImmBuildDef2 c -> Format.fprintf fmt "(ImmBuildDef %i)" c.id
-    | _ -> assert false
-    end
-  | Same c -> Format.fprintf fmt "(Same %i)" c.id
+(* let pp_kind fmt c =  *)
+(*   match c.kind with *)
+(*   | Root -> Format.fprintf fmt "Root" *)
+(*   | Res res ->  *)
+(*       Format.fprintf fmt "(Res %i %i " res.rc1.id res.rc2.id; *)
+(*       List.iter (fun c -> Format.fprintf fmt "%i " c.id) res.rtail; *)
+(*       Format.fprintf fmt ") " *)
+(*   | Other other -> *)
+(*     begin match other with *)
+(*     | ImmFlatten (c,l) ->  *)
+(* 	Format.fprintf fmt "(ImmFlatten %i %a)" *)
+(* 	  c.id pp_form l *)
+(*     | True -> Format.fprintf fmt "True" *)
+(*     | False -> Format.fprintf fmt "False" *)
+(*     | BuildDef l -> Format.fprintf fmt "(BuildDef %a)" pp_form l *)
+(*     | BuildDef2 l -> Format.fprintf fmt "(BuildDef2 %a)" pp_form l *)
+(*     | BuildProj (l,i) -> Format.fprintf fmt "(BuildProj %a %i)" pp_form l i *)
+(*     | ImmBuildProj (c,i) ->Format.fprintf fmt "(ImmBuildProj %i %i)" c.id i *)
+(*     | ImmBuildDef c -> Format.fprintf fmt "(ImmBuildDef %i)" c.id *)
+(*     | ImmBuildDef2 c -> Format.fprintf fmt "(ImmBuildDef %i)" c.id *)
+(*     | _ -> assert false *)
+(*     end *)
+(*   | Same c -> Format.fprintf fmt "(Same %i)" c.id *)
 
-let rec pp_trace fmt c = 
-  Format.fprintf fmt "%i = %a %a" c.id pp_kind c pp_value c;
-  if c.next <> None then pp_trace fmt (next c)
+(* let rec pp_trace fmt c =  *)
+(*   Format.fprintf fmt "%i = %a %a" c.id pp_kind c pp_value c; *)
+(*   if c.next <> None then pp_trace fmt (next c) *)
 
 
 (******************************************************************************)
@@ -142,7 +147,7 @@ let make_roots first last =
   let roots = Array.make (last.id + 2) (Structures.mkArray (cint, Array.make 1 (mkInt 0))) in
   let mk_elem l = 
     let x = match Form.pform l with
-    | Fatom x -> x + 2
+    | Fatom x -> (Form.hatom_index x) + 2
     | _ -> assert false  in
     mkInt (if Form.is_pos l then x lsl 1 else (x lsl 1) lxor 1) in
   let r = ref first in
@@ -164,7 +169,7 @@ let interp_roots first last =
   let tbl = Hashtbl.create 17 in
   let mk_elem l = 
     let x = match Form.pform l with
-    | Fatom x -> x
+    | Fatom x -> Form.hatom_index x
     | _ -> assert false in
     let ph = x lsl 1 in
     let h = if Form.is_pos l then ph else ph lxor 1 in
@@ -280,7 +285,7 @@ let export out_channel nvars first =
   let count = ref 0 in
   (* count the number of non trivial clause *)
   let r = ref first in
-  let add_count c = 
+  let add_count c =
     match c.value with
     | Some cl -> if not (is_trivial cl) then incr count
     | _ -> () in
@@ -386,6 +391,12 @@ let check_unsat filename =
   with
     | End_of_file -> close_in f
 
+end
+
+
+module CNF = ZChaff(SatAtom.Form)
+module INT = ZChaff(IntAtom.Form)
+
 
 
 
@@ -393,7 +404,7 @@ let check_unsat filename =
 (** Given a Coq formula build the proof (SAT+CNF computation)                 *)
 (******************************************************************************)
 
-(* Build the problem that it may be understoof by zchaff *)
+(* Build the problem so that it may be understood by zchaff *)
 
 let cnf_checker_modules = [ ["SMTCoq";"Trace";"Cnf_Checker"] ]
 
@@ -411,10 +422,10 @@ let build_body reify_atom reify_form l b (max_id, confl) =
   let ntvar = mkName "t_var" in
   let ntform = mkName "t_form" in
   let nc = mkName "c" in
-  let tvar = Atom.interp_tbl reify_atom in
-  let _, tform = Form.interp_tbl reify_form in
+  let tvar = SatAtom.Atom.interp_tbl reify_atom in
+  let _, tform = SatAtom.Form.interp_tbl reify_form in
   let (tres,_) =
-    SmtTrace.to_coq Form.to_coq certif_ops confl in
+    SmtTrace.to_coq SatAtom.Form.to_coq certif_ops confl in
   let certif =
     mklApp cCertif [|mkInt (max_id + 1);tres;mkInt (get_pos confl)|] in
   let vtvar = Term.mkRel 3 in
@@ -432,10 +443,10 @@ let build_body_eq reify_atom reify_form l1 l2 l (max_id, confl) =
   let ntvar = mkName "t_var" in
   let ntform = mkName "t_form" in
   let nc = mkName "c" in
-  let tvar = Atom.interp_tbl reify_atom in
-  let _, tform = Form.interp_tbl reify_form in
+  let tvar = SatAtom.Atom.interp_tbl reify_atom in
+  let _, tform = SatAtom.Form.interp_tbl reify_form in
   let (tres,_) =
-    SmtTrace.to_coq Form.to_coq certif_ops confl in
+    SmtTrace.to_coq SatAtom.Form.to_coq certif_ops confl in
   let certif =
     mklApp cCertif [|mkInt (max_id + 1);tres;mkInt (get_pos confl)|] in 
   let vtvar = Term.mkRel 3 in
@@ -459,18 +470,18 @@ let get_arguments concl =
 (* Pre-process the proof given by zchaff *)
 
 let make_proof pform_tbl atom_tbl env reify_form l =
-  let fl = Form.flatten reify_form l in
+  let fl = SatAtom.Form.flatten reify_form l in
   let root = SmtTrace.mkRootV [l] in
   let _ = 
-    if Form.equal l fl then Cnf.make_cnf reify_form root 
+    if SatAtom.Form.equal l fl then SatAtom.Cnf.make_cnf reify_form root 
     else
       let first_c = SmtTrace.mkOther (ImmFlatten(root,fl)) (Some [fl]) in
       SmtTrace.link root first_c;
-      Cnf.make_cnf reify_form first_c in
+      SatAtom.Cnf.make_cnf reify_form first_c in
   let (reloc, resfilename, logfilename, last) =
-    call_zchaff (Form.nvars reify_form) root in
-  (try check_unsat resfilename with
-    | Sat model -> Structures.error (List.fold_left (fun acc i ->
+    CNF.call_zchaff (SatAtom.Form.nvars reify_form) root in
+  (try CNF.check_unsat resfilename with
+    | CNF.Sat model -> Structures.error (List.fold_left (fun acc i ->
       let index = if i > 0 then i-1 else -i-1 in
       let ispos = i > 0 in
       try (
@@ -484,7 +495,7 @@ let make_proof pform_tbl atom_tbl env reify_form l =
       ) with | Invalid_argument _ -> acc (* Because cnf computation does not put the new formulas in the table... Perhaps it should? *)
     ) "zchaff found a counterexample:\n" model)
   );
-  import_cnf_trace reloc logfilename root last
+  CNF.import_cnf_trace reloc logfilename root last
 
 
 (* The whole tactic *)
@@ -498,25 +509,25 @@ let tactic gl =
 
   let (forall_let, concl) = Term.decompose_prod_assum t in
   let a, b = get_arguments concl in
-  let reify_atom = Atom.create () in
-  let reify_form = Form.create () in
+  let reify_atom = SatAtom.Atom.create () in
+  let reify_form = SatAtom.Form.create () in
   let body = 
     if (b = Lazy.force ctrue || b = Lazy.force cfalse) then
-      let l = Form.of_coq (Atom.get reify_atom) reify_form a in
-      let l' = if b = Lazy.force ctrue then Form.neg l else l in
-      let atom_tbl = Atom.atom_tbl reify_atom in
-      let pform_tbl = Form.pform_tbl reify_form in
+      let l = SatAtom.Form.of_coq (SatAtom.Atom.get reify_atom) reify_form a in
+      let l' = if b = Lazy.force ctrue then SatAtom.Form.neg l else l in
+      let atom_tbl = SatAtom.Atom.atom_tbl reify_atom in
+      let pform_tbl = SatAtom.Form.pform_tbl reify_form in
       let max_id_confl = make_proof pform_tbl atom_tbl (Environ.push_rel_context forall_let env) reify_form l' in
-      build_body reify_atom reify_form (Form.to_coq l) b max_id_confl 
+      build_body reify_atom reify_form (SatAtom.Form.to_coq l) b max_id_confl 
     else
-      let l1 = Form.of_coq (Atom.get reify_atom) reify_form a in
-      let l2 = Form.of_coq (Atom.get reify_atom) reify_form b in
-      let l = Form.neg (Form.get reify_form (Fapp(Fiff,[|l1;l2|]))) in
-      let atom_tbl = Atom.atom_tbl reify_atom in
-      let pform_tbl = Form.pform_tbl reify_form in
+      let l1 = SatAtom.Form.of_coq (SatAtom.Atom.get reify_atom) reify_form a in
+      let l2 = SatAtom.Form.of_coq (SatAtom.Atom.get reify_atom) reify_form b in
+      let l = SatAtom.Form.neg (SatAtom.Form.get reify_form (Fapp(Fiff,[|l1;l2|]))) in
+      let atom_tbl = SatAtom.Atom.atom_tbl reify_atom in
+      let pform_tbl = SatAtom.Form.pform_tbl reify_form in
       let max_id_confl = make_proof pform_tbl atom_tbl (Environ.push_rel_context forall_let env) reify_form l in
       build_body_eq reify_atom reify_form 
-	(Form.to_coq l1) (Form.to_coq l2) (Form.to_coq l) max_id_confl in
+	(SatAtom.Form.to_coq l1) (SatAtom.Form.to_coq l2) (SatAtom.Form.to_coq l) max_id_confl in
   let compose_lam_assum forall_let body =
     List.fold_left (fun t rd -> Term.mkLambda_or_LetIn rd t) body forall_let in
   let res = compose_lam_assum forall_let body in
@@ -529,3 +540,143 @@ let tactic gl =
 (******************************************************************************)
 (** Decision procedure for machine integers (via bit blasting)                *)
 (******************************************************************************)
+
+(* Build the problem so that it may be understood by zchaff *)
+
+let int_checker_modules = [ ["SMTCoq";"Trace";"Int_Checker"] ]
+
+let certif_ops = CoqTerms.make_certif_ops int_checker_modules
+let ccertif = gen_constant int_checker_modules "certif"
+let cCertif = gen_constant int_checker_modules "Certif"
+let cchecker_b_correct =
+  gen_constant int_checker_modules "checker_b_correct"
+let cchecker_b = gen_constant int_checker_modules "checker_b"
+let cchecker_eq_correct =
+  gen_constant int_checker_modules "checker_eq_correct"
+let cchecker_eq = gen_constant int_checker_modules "checker_eq"
+
+
+let make_t_vars ro = IntAtom.Op.interp_tbl (Lazy.force cbval_empty_t_i) (fun dom value -> mklApp cBval_empty_t_i [|IntAtom.Btype.to_coq dom; value|]) ro
+
+
+let build_body ro ra rf l b (max_id, confl) =
+  let (tres,_) = SmtTrace.to_coq IntAtom.Form.to_coq certif_ops confl in
+  let certif =
+    mklApp cCertif [|mkInt (max_id + 1); tres;mkInt (get_pos confl)|] in
+
+  let t_atom = IntAtom.Atom.interp_tbl ra in
+  let t_form = snd (IntAtom.Form.interp_tbl rf) in
+  let t_vars = make_t_vars ro in
+
+  let ntatom = mkName "t_atom" in
+  let ntform = mkName "t_form" in
+  let nc = mkName "c" in
+  let ntvars = mkName "t_vars" in
+
+  let vtatom = Term.mkRel 4 in
+  let vtform = Term.mkRel 3 in
+  let vc = Term.mkRel 2 in
+  let vtvars = Term.mkRel 1 in
+
+  Term.mkLetIn (ntatom, t_atom, mklApp carray [|Lazy.force catom|],
+  Term.mkLetIn (ntform, t_form, mklApp carray [|Lazy.force cform|],
+  Term.mkLetIn (nc, certif, Lazy.force ccertif,
+  Term.mkLetIn (ntvars, Term.lift 3 t_vars, mklApp carray [|Lazy.force cbval_empty_t_i|],
+  mklApp cchecker_b_correct
+	 [|vtvars; vtatom; vtform; l; b; vc;
+	   vm_cast_true (mklApp cchecker_b [|vtvars;vtatom;vtform;l;b;vc|])|]))))
+
+
+(* let build_body_eq reify_atom reify_form l1 l2 l (max_id, confl) = *)
+(*   let ntvar = mkName "t_var" in *)
+(*   let ntform = mkName "t_form" in *)
+(*   let nc = mkName "c" in *)
+(*   let tvar = SatAtom.Atom.interp_tbl reify_atom in *)
+(*   let _, tform = SatAtom.Form.interp_tbl reify_form in *)
+(*   let (tres,_) = *)
+(*     SmtTrace.to_coq SatAtom.Form.to_coq certif_ops confl in *)
+(*   let certif = *)
+(*     mklApp cCertif [|mkInt (max_id + 1);tres;mkInt (get_pos confl)|] in *)
+(*   let vtvar = Term.mkRel 3 in *)
+(*   let vtform = Term.mkRel 2 in *)
+(*   let vc = Term.mkRel 1 in *)
+(*   Term.mkLetIn (ntvar, tvar, mklApp carray [|Lazy.force cbool|], *)
+(*   Term.mkLetIn (ntform, tform, mklApp carray [|Lazy.force cform|], *)
+(*   Term.mkLetIn (nc, certif, Lazy.force ccertif, *)
+(*   mklApp cchecker_eq_correct *)
+(*          [|vtvar; vtform; l1; l2; l; vc; *)
+(* 	   vm_cast_true (mklApp cchecker_eq [|vtform;l1;l2;l;vc|])|]))) *)
+
+(* let get_arguments concl = *)
+(*   let f, args = Term.decompose_app concl in *)
+(*   match args with *)
+(*   | [ty;a;b] when f = Lazy.force ceq && ty = Lazy.force cbool -> a, b *)
+(*   | [a] when f = Lazy.force cis_true -> a, Lazy.force ctrue *)
+(*   | _ -> failwith ("Zchaff.tactic :can only deal with equality over bool") *)
+
+
+(* Pre-process the proof given by zchaff *)
+
+let make_proof (* pform_tbl atom_tbl *) env reify_form l =
+  let fl = IntAtom.Form.flatten reify_form l in
+  let root : IntAtom.Form.t SmtCertif.clause = SmtTrace.mkRootV [l] in
+  let _ =
+    if IntAtom.Form.equal l fl then IntAtom.Cnf.make_cnf reify_form root
+    else
+      let first_c = SmtTrace.mkOther (ImmFlatten(root,fl)) (Some [fl]) in
+      SmtTrace.link root first_c;
+      IntAtom.Cnf.make_cnf reify_form first_c in
+  let (reloc, resfilename, logfilename, last) =
+    INT.call_zchaff (IntAtom.Form.nvars reify_form) root in
+  (* (try *) INT.check_unsat resfilename (* with *)
+  (*   | INT.Sat model -> Structures.error (List.fold_left (fun acc i -> *)
+  (*     let index = if i > 0 then i-1 else -i-1 in *)
+  (*     let ispos = i > 0 in *)
+  (*     try ( *)
+  (*       let f = pform_tbl.(index) in *)
+  (*       match f with *)
+  (*         | Fatom a -> *)
+  (*           let t = atom_tbl.(a) in *)
+  (*           let value = if ispos then " = true" else " = false" in *)
+  (*           acc^"  "^(Pp.string_of_ppcmds (Printer.pr_constr_env env t))^value *)
+  (*         | Fapp _ -> acc *)
+  (*     ) with | Invalid_argument _ -> acc (\* Because cnf computation does not put the new formulas in the table... Perhaps it should? *\) *)
+  (*   ) "zchaff found a counterexample:\n" model) *)
+  (* ) *);
+  INT.import_cnf_trace reloc logfilename root last
+
+
+(* The whole tactic *)
+
+let int_decide gl =
+  SmtTrace.clear ();
+
+  let env = Tacmach.pf_env gl in
+  let sigma = Tacmach.project gl in
+  let t = Tacmach.pf_concl gl in
+
+  let (forall_let, concl) = Term.decompose_prod_assum t in
+  let a, b = get_arguments concl in
+  let ro = IntAtom.Op.create () in
+  let reify_atom = IntAtom.Atom.create () in
+  let reify_form = IntAtom.Form.create () in
+  let body =
+    if (b = Lazy.force ctrue || b = Lazy.force cfalse) then
+      let l = IntAtom.Form.of_coq (IntAtom.Atom.of_coq ro reify_atom env sigma) reify_form a in
+      let l' = if b = Lazy.force ctrue then IntAtom.Form.neg l else l in
+      let max_id_confl = make_proof (* pform_tbl atom_tbl *) (Environ.push_rel_context forall_let env) reify_form l' in
+      build_body ro reify_atom reify_form (IntAtom.Form.to_coq l) b max_id_confl
+    else assert false
+      (* let l1 = IntAtom.Form.of_coq (IntAtom.Atom.get reify_atom) reify_form a in *)
+      (* let l2 = IntAtom.Form.of_coq (IntAtom.Atom.get reify_atom) reify_form b in *)
+      (* let l = IntAtom.Form.neg (IntAtom.Form.get reify_form (Fapp(Fiff,[|l1;l2|]))) in *)
+      (* let atom_tbl = IntAtom.Atom.atom_tbl reify_atom in *)
+      (* let pform_tbl = IntAtom.Form.pform_tbl reify_form in *)
+      (* let max_id_confl = make_proof pform_tbl atom_tbl (Environ.push_rel_context forall_let env) reify_form l in *)
+      (* build_body_eq reify_atom reify_form *)
+      (*   (IntAtom.Form.to_coq l1) (IntAtom.Form.to_coq l2) (IntAtom.Form.to_coq l) max_id_confl in *)
+  in
+  let compose_lam_assum forall_let body =
+    List.fold_left (fun t rd -> Term.mkLambda_or_LetIn rd t) body forall_let in
+  let res = compose_lam_assum forall_let body in
+  Tactics.exact_no_check res gl

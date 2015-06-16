@@ -173,6 +173,3 @@ module Form : SmtForm.FORM with type hatom = hatom
 module Trace : sig
   val share_prefix : Form.t SmtCertif.clause -> int -> unit
 end
-module Cnf : sig
-  val make_cnf_list : Form.reify -> Form.t SmtCertif.clause -> Form.t list -> Form.t SmtCertif.clause
-end

@@ -119,6 +119,8 @@ let cunit_typ_eqb = gen_constant smt_modules "unit_typ_eqb"
 
 let ctval =  gen_constant smt_modules "tval"
 let cTval =  gen_constant smt_modules "Tval"
+let cbval_empty_t_i =  gen_constant smt_modules "bval_empty_t_i"
+let cBval_empty_t_i =  gen_constant smt_modules "Bval_empty_t_i"
 
 let cCO_xH = gen_constant smt_modules "CO_xH"
 let cCO_Z0 = gen_constant smt_modules "CO_Z0"
