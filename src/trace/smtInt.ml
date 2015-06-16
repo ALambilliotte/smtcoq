@@ -15,7 +15,7 @@
 
 
 open SmtForm
-open SmtAtom
+open IntAtom
 open SmtCertif
 open SmtTrace
 

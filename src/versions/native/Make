@@ -35,7 +35,7 @@
 -custom "$(CAMLYACC) $<" "%.mly" "%.ml %.mli"
 -custom "" "verit/veritParser.ml verit/veritLexer.ml verit/smtlib2_parse.ml verit/smtlib2_lex.ml" "ml"
 
--custom "$(CAMLOPTLINK) $(ZFLAGS) -a -o $@ $^" "versions/native/structures.cmx trace/smtMisc.cmx trace/coqTerms.cmx trace/smtForm.cmx trace/smtCertif.cmx trace/smtTrace.cmx trace/smtCnf.cmx trace/satAtom.cmx trace/smtAtom.cmx trace/smtInt.cmx zchaff/satParser.cmx zchaff/zchaffParser.cmx zchaff/cnfParser.cmx zchaff/zchaff.cmx verit/smtlib2_util.cmx verit/smtlib2_ast.cmx verit/smtlib2_parse.cmx verit/smtlib2_lex.cmx lia/lia.cmx verit/veritSyntax.cmx verit/veritParser.cmx verit/veritLexer.cmx verit/smtlib2_genConstr.cmx verit/verit.cmx trace/smt_tactic.cmx" "$(CMXA)"
+-custom "$(CAMLOPTLINK) $(ZFLAGS) -a -o $@ $^" "versions/native/structures.cmx trace/smtMisc.cmx trace/coqTerms.cmx trace/smtForm.cmx trace/smtCertif.cmx trace/smtTrace.cmx trace/smtCnf.cmx trace/satAtom.cmx trace/smtAtom.cmx trace/intAtom.cmx trace/smtInt.cmx zchaff/satParser.cmx zchaff/zchaffParser.cmx zchaff/cnfParser.cmx zchaff/zchaff.cmx verit/smtlib2_util.cmx verit/smtlib2_ast.cmx verit/smtlib2_parse.cmx verit/smtlib2_lex.cmx lia/lia.cmx verit/veritSyntax.cmx verit/veritParser.cmx verit/veritLexer.cmx verit/smtlib2_genConstr.cmx verit/verit.cmx trace/smt_tactic.cmx" "$(CMXA)"
 -custom "$(CAMLOPTLINK) $(ZFLAGS) -o $@ -linkall -shared $^" "$(CMXA)" "$(CMXS)"
 
 CMXA = trace/smtcoq.cmxa
@@ -51,6 +51,8 @@ trace/satAtom.ml
 trace/smtInt.ml
 trace/smtAtom.ml
 trace/smtAtom.mli
+trace/intAtom.ml
+trace/intAtom.mli
 trace/smtCertif.ml
 trace/smtCnf.ml
 trace/smtForm.ml

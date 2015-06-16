@@ -26,6 +26,7 @@ type btype =
   | TZ
   | Tbool
   | Tpositive
+  | Tint
   | Tindex of indexed_type
 
 module Btype = 
@@ -50,12 +51,14 @@ module Btype =
       | TZ -> Lazy.force cTZ
       | Tbool -> Lazy.force cTbool
       | Tpositive -> Lazy.force cTpositive
+      | Tint -> Lazy.force cTint
       | Tindex i -> index_to_coq i
 
     let to_smt fmt = function
       | TZ -> Format.fprintf fmt "Int"
       | Tbool -> Format.fprintf fmt "Bool"
       | Tpositive -> Format.fprintf fmt "Int"
+      | Tint -> failwith "TODO: plug in bit vectors theory"
       | Tindex i -> Format.fprintf fmt "Tindex_%i" i.index
 
     (* reify table *)
@@ -69,6 +72,7 @@ module Btype =
       Hashtbl.add htbl (Lazy.force cZ) TZ;
       Hashtbl.add htbl (Lazy.force cbool) Tbool;
       (* Hashtbl.add htbl (Lazy.force cpositive) Tpositive; *)
+      Hashtbl.add htbl (Lazy.force cint) Tint;
       { count = 0;
 	tbl = htbl }
 
@@ -112,6 +116,7 @@ module Btype =
       | TZ -> Lazy.force cZ
       | Tbool -> Lazy.force cbool
       | Tpositive -> Lazy.force cpositive
+      | Tint -> Lazy.force cint
       | Tindex c -> mklApp cte_carrier [|c.hval|]
 
   end
@@ -121,6 +126,7 @@ module Btype =
 type cop = 
    | CO_xH
    | CO_Z0
+   | CO_int of Structures.int63
 
 type uop =
    | UO_xO
@@ -128,6 +134,7 @@ type uop =
    | UO_Zpos 
    | UO_Zneg
    | UO_Zopp
+   | UO_index of int
 
 type bop = 
    | BO_Zplus
@@ -137,6 +144,7 @@ type bop =
    | BO_Zle
    | BO_Zge
    | BO_Zgt
+   | BO_int_xor
    | BO_eq of btype
 
 type nop =
@@ -164,14 +172,17 @@ module Op =
     let c_to_coq = function
       | CO_xH -> Lazy.force cCO_xH
       | CO_Z0 -> Lazy.force cCO_Z0
+      | CO_int i -> mklApp cCO_int [|Structures.mkInt63 i|]
 
     let c_type_of = function
       | CO_xH -> Tpositive
       | CO_Z0 -> TZ
+      | CO_int _ -> Tint
 
     let interp_cop = function
       | CO_xH -> Lazy.force cxH
       | CO_Z0 -> Lazy.force cZ0
+      | CO_int i -> Structures.mkInt63 i
 
     let u_to_coq = function 
       | UO_xO -> Lazy.force cUO_xO
@@ -179,14 +190,17 @@ module Op =
       | UO_Zpos -> Lazy.force cUO_Zpos 
       | UO_Zneg -> Lazy.force cUO_Zneg
       | UO_Zopp -> Lazy.force cUO_Zopp
+      | UO_index i -> mklApp cUO_index [|Structures.mkInt i|]
 
     let u_type_of = function 
       | UO_xO | UO_xI -> Tpositive
       | UO_Zpos | UO_Zneg | UO_Zopp -> TZ
+      | UO_index _ -> Tbool
 
     let u_type_arg = function 
       | UO_xO | UO_xI | UO_Zpos | UO_Zneg -> Tpositive
       | UO_Zopp -> TZ
+      | UO_index _ -> Tint
 
     let interp_uop = function
       | UO_xO -> Lazy.force cxO
@@ -194,6 +208,7 @@ module Op =
       | UO_Zpos -> Lazy.force cZpos
       | UO_Zneg -> Lazy.force cZneg
       | UO_Zopp -> Lazy.force copp
+      | UO_index i -> mklApp cbit_rev [|Structures.mkInt i|]
 
     let eq_tbl = Hashtbl.create 17 
 
@@ -212,21 +227,25 @@ module Op =
       | BO_Zle -> Lazy.force cBO_Zle
       | BO_Zge -> Lazy.force cBO_Zge
       | BO_Zgt -> Lazy.force cBO_Zgt
+      | BO_int_xor -> Lazy.force cBO_int_xor
       | BO_eq t -> eq_to_coq t
 
     let b_type_of = function
       | BO_Zplus | BO_Zminus | BO_Zmult -> TZ
       | BO_Zlt | BO_Zle | BO_Zge | BO_Zgt | BO_eq _ -> Tbool
+      | BO_int_xor -> Tint
 
     let b_type_args = function
       | BO_Zplus | BO_Zminus | BO_Zmult 
       | BO_Zlt | BO_Zle | BO_Zge | BO_Zgt -> (TZ,TZ)
       | BO_eq t -> (t,t)
+      | BO_int_xor -> (Tint, Tint)
 
     let interp_eq = function
       | TZ -> Lazy.force ceqbZ
       | Tbool -> Lazy.force ceqb
       | Tpositive -> Lazy.force ceqbP
+      | Tint -> Lazy.force ceq63
       | Tindex i -> mklApp cte_eqb [|i.hval|]
 
     let interp_bop = function
@@ -237,6 +256,7 @@ module Op =
       | BO_Zle -> Lazy.force cleb
       | BO_Zge -> Lazy.force cgeb
       | BO_Zgt -> Lazy.force cgtb
+      | BO_int_xor -> Lazy.force clxor
       | BO_eq t -> interp_eq t
 
     let n_to_coq = function
@@ -252,6 +272,7 @@ module Op =
       | TZ -> Lazy.force cZ
       | Tbool -> Lazy.force cbool
       | Tpositive -> Lazy.force cpositive
+      | Tint -> Lazy.force cint
       | Tindex i -> mklApp cte_carrier [|i.hval|]
 
     let interp_nop = function
@@ -429,14 +450,15 @@ module Atom =
       | Acop c ->
         (match c with
           | CO_xH -> 1
-          | CO_Z0 -> 0)
+          | CO_Z0 -> 0
+          | CO_int _ -> assert false)
       | Auop (op,h) ->
         (match op with
           | UO_xO -> 2*(compute_hint h)
           | UO_xI -> 2*(compute_hint h) + 1
           | UO_Zpos -> compute_hint h
           | UO_Zneg -> - (compute_hint h)
-          | UO_Zopp -> assert false)
+          | UO_Zopp | UO_index _ -> assert false)
       | _ -> assert false
 
     and compute_hint h = compute_int (atom h)
@@ -476,6 +498,7 @@ module Atom =
         | BO_Zle -> "<="
         | BO_Zge -> ">="
         | BO_Zgt -> ">"
+        | BO_int_xor -> failwith "TODO: plug in bit vectors theory"
         | BO_eq _ -> "=" in
       Format.fprintf fmt "(%s " s;
       to_smt fmt h1;
@@ -547,6 +570,7 @@ module Atom =
       | CCZpos
       | CCZneg
       | CCZopp
+      | CCbit
       | CCZplus
       | CCZminus
       | CCZmult
@@ -554,6 +578,7 @@ module Atom =
       | CCZle
       | CCZge
       | CCZgt
+      | CClxor
       | CCeqb
       | CCeqbP
       | CCeqbZ
@@ -565,8 +590,10 @@ module Atom =
       List.iter add
 	[ cxH,CCxH; cZ0,CCZ0;
           cxO,CCxO; cxI,CCxI; cZpos,CCZpos; cZneg,CCZneg; copp,CCZopp;
+          cbit, CCbit;
           cadd,CCZplus; csub,CCZminus; cmul,CCZmult; cltb,CCZlt;
           cleb,CCZle; cgeb,CCZge; cgtb,CCZgt;
+          clxor, CClxor;
           ceqb,CCeqb; ceqbP,CCeqbP; ceqbZ, CCeqbZ
         ];
       tbl
@@ -579,6 +606,7 @@ module Atom =
 	try Hashtbl.find op_tbl c with Not_found -> CCunknown in
       let mk_cop op = get reify (Acop op) in
       let rec mk_hatom h =
+        if Structures.isInt h then mk_cop (CO_int (mk_int63 h)) else
 	let c, args = Term.decompose_app h in
 	match get_cst c with
           | CCxH -> mk_cop CO_xH
@@ -588,6 +616,10 @@ module Atom =
           | CCZpos -> mk_uop UO_Zpos args
           | CCZneg -> mk_uop UO_Zneg args
           | CCZopp -> mk_uop UO_Zopp args
+          | CCbit ->
+             (match args with
+               | [x;i] -> mk_uop (UO_index (mk_int i)) [x]
+               | _ -> assert false)
           | CCZplus -> mk_bop BO_Zplus args
           | CCZminus -> mk_bop BO_Zminus args
           | CCZmult -> mk_bop BO_Zmult args
@@ -595,6 +627,7 @@ module Atom =
           | CCZle -> mk_bop BO_Zle args
           | CCZge -> mk_bop BO_Zge args
           | CCZgt -> mk_bop BO_Zgt args
+          | CClxor -> mk_bop BO_int_xor args
           | CCeqb -> mk_bop (BO_eq Tbool) args
           | CCeqbP -> mk_bop (BO_eq Tpositive) args
           | CCeqbZ -> mk_bop (BO_eq TZ) args
@@ -610,6 +643,9 @@ module Atom =
           let h2 = mk_hatom a2 in
           get reify (Abop (op,h1,h2))
         | _ -> assert false
+
+      and mk_int   i = assert (Structures.isInt i); Structures.destInt   i
+      and mk_int63 i = assert (Structures.isInt i); Structures.destInt63 i
 
       and mk_unknown c args ty =
         let hargs = Array.of_list (List.map mk_hatom args) in
