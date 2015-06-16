@@ -93,11 +93,9 @@ module MakeBB = struct
                 ) bits;
                 bb (Atom x); bb (Atom y)
              (* In the other cases, we just propagate down to the leaves *)
-             | Acop _ -> ()
+             | Acop _ | Avar _ -> ()
              | Auop (_, x) -> bb (Atom x)
-             | Abop (_, x, y) -> bb (Atom x); bb (Atom y)
-             | Anop (_, xs) | Aapp (_, xs) ->
-                Array.iter (fun x -> bb (Atom x)) xs)) in
+             | Abop (_, x, y) -> bb (Atom x); bb (Atom y))) in
 
     bb af
 
