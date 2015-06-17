@@ -26,12 +26,6 @@ module type ATOM =
   end 
 
 
-module type SATATOM = sig
-  include ATOM
-  val build : int -> t
-end
-
-
 type fop =
   | Ftrue
   | Ffalse
@@ -103,13 +97,4 @@ module type FORM =
   end
 
 
-module type SATFORM = sig
-  include FORM
-  val hatom_build : int -> hatom
-end
-
-
 module Make (Atom:ATOM) : FORM with type hatom = Atom.t
-module MakeSat (Atom:SATATOM) : SATFORM with type hatom = Atom.t
-
-	

@@ -30,12 +30,6 @@ module type ATOM =
   end 
 
 
-module type SATATOM = sig
-  include ATOM
-  val build : int -> t
-end
-
-
 type fop =
   | Ftrue
   | Ffalse
@@ -105,12 +99,6 @@ module type FORM =
 	  (hatom -> Term.constr) -> (int, Term.constr) Hashtbl.t -> 
 	    t -> Term.constr
   end
-
-
-module type SATFORM = sig
-  include FORM
-  val hatom_build : int -> hatom
-end
 
 
 module Make (Atom:ATOM) =
@@ -518,9 +506,3 @@ module Make (Atom:ATOM) =
       interp_form f
 
   end
-
-
-module MakeSat (Atom:SATATOM) = struct
-  include Make(Atom)
-  let hatom_build = Atom.build
-end

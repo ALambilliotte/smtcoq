@@ -127,7 +127,7 @@ module Atom :
     end
 
 
-module Form : SmtForm.SATFORM with type hatom = hatom
+module Form : SmtForm.FORM with type hatom = hatom
 module Trace : sig
   val share_prefix : Form.t SmtCertif.clause -> int -> unit
 end

@@ -27,10 +27,9 @@ open SmtTrace
 open SmtMisc
 
 
-module ZChaff (Form:SATFORM) = struct
+module ZChaff (Form:FORM) = struct
 
   module Trace = SmtTrace.MakeOpt(Form)
-  module CnfParser = CnfParser.Parser(Form)
 
 (* Detection of trivial clauses *)
 
@@ -106,25 +105,8 @@ let rec is_trivial cl =
 
 
 (******************************************************************************)
-(** Given a cnf (dimacs) files and a resolve_trace build                      *)
-(*  the corresponding object                                                  *) 
+(** Given a resolve_trace build the corresponding object                      *)
 (******************************************************************************)
-
-
-let import_cnf filename = 
-  let nvars, first, last = CnfParser.parse_cnf filename in
-  let reloc = Hashtbl.create 17 in
-  let count = ref 0 in
-  let r = ref first in
-  while !r.next <> None do
-    if not (is_trivial (get_val !r)) then begin
-      Hashtbl.add reloc !count !r;
-      incr count
-    end;
-    r := next !r
-  done;
-  if not (is_trivial (get_val !r)) then Hashtbl.add reloc !count !r;
-  nvars,first,last,reloc
 
 let import_cnf_trace reloc filename first last =
   (* Format.fprintf Format.err_formatter "init@."; *)
@@ -196,79 +178,8 @@ let interp_roots first last =
   end;
   !res
 
-let sat_checker_modules = [ ["SMTCoq";"Trace";"Sat_Checker"] ]
-
-let certif_ops = CoqTerms.make_certif_ops sat_checker_modules 
-let cCertif = gen_constant sat_checker_modules "Certif" 
-
-let parse_certif dimacs trace fdimacs ftrace =
-  SmtTrace.clear ();
-  let _,first,last,reloc = import_cnf fdimacs in
-  let d = make_roots first last in
-  let ce1 = Structures.mkConst d in
-  let _ = declare_constant dimacs (DefinitionEntry ce1, IsDefinition Definition) in
-
-  let max_id, confl = import_cnf_trace reloc ftrace first last in
-  let (tres,_) = SmtTrace.to_coq (fun _ -> assert false) certif_ops confl in
-  let certif = 
-   mklApp cCertif [|mkInt (max_id + 1); tres;mkInt (get_pos confl)|] in 
-  let ce2 = Structures.mkConst certif in
-  let _ = declare_constant trace (DefinitionEntry ce2, IsDefinition Definition) in
-  ()
-
-let cdimacs = gen_constant sat_checker_modules "dimacs"
-let ccertif = gen_constant sat_checker_modules "certif"
-let ctheorem_checker = gen_constant sat_checker_modules "theorem_checker"
-let cchecker = gen_constant sat_checker_modules "checker"
-
-let theorem name fdimacs ftrace =   
-  SmtTrace.clear ();
-  let _,first,last,reloc = import_cnf fdimacs in
-  let d = make_roots first last in
-
-  let max_id, confl = import_cnf_trace reloc ftrace first last in
-  let (tres,_) =
-    SmtTrace.to_coq (fun _ -> assert false) certif_ops confl in
-  let certif =
-   mklApp cCertif [|mkInt (max_id + 1);tres;mkInt (get_pos confl)|] in 
-
-  let theorem_concl = mklApp cnot [|mklApp cis_true [|interp_roots first last|] |] in
-  let vtype = Term.mkProd(Names.Anonymous, Lazy.force cint, Lazy.force cbool) in
-  let theorem_type = 
-    Term.mkProd (mkName "v", vtype, theorem_concl) in
-  let theorem_proof =
-   Term.mkLetIn (mkName "d", d, Lazy.force cdimacs,
-   Term.mkLetIn (mkName "c", certif, Lazy.force ccertif,
-   Term.mkLambda (mkName "v", vtype,
-   mklApp ctheorem_checker
-               [| Term.mkRel 3(*d*); Term.mkRel 2(*c*);
-		  vm_cast_true 
-		    (mklApp cchecker [|Term.mkRel 3(*d*); Term.mkRel 2(*c*)|]);
-                  Term.mkRel 1(*v*)|]))) in
-  let ce = Structures.mkConst theorem_proof in
-  let _ = declare_constant name (DefinitionEntry ce, IsDefinition Definition) in
-  ()
 
 
-let checker fdimacs ftrace =
-  SmtTrace.clear ();
-  let _,first,last,reloc = import_cnf fdimacs in
-  let d = make_roots first last in
-
-  let max_id, confl = import_cnf_trace reloc ftrace first last in
-  let (tres,_) =
-    SmtTrace.to_coq (fun _ -> assert false) certif_ops confl in
-  let certif =
-    mklApp cCertif [|mkInt (max_id + 1);tres;mkInt (get_pos confl)|] in
-
-  let tm = mklApp cchecker [|d; certif|] in
-  let expr = Constrextern.extern_constr true Environ.empty_env tm in
-  Vernacentries.interp (Vernacexpr.VernacCheckMayEval (Some Structures.glob_term_CbvVm, None, expr))
-
-
-
-
-  
 (******************************************************************************)
 (** Utilities to call zchaff on various kinds of goals                        *)
 (******************************************************************************)
@@ -397,6 +308,101 @@ end
 module CNF = ZChaff(SatAtom.Form)
 module INT = ZChaff(IntAtom.Form)
 
+
+
+(******************************************************************************)
+(** Given a cnf (dimacs) file build the corresponding object                  *)
+(******************************************************************************)
+
+let import_cnf filename =
+  let nvars, first, last = CnfParser.parse_cnf filename in
+  let reloc = Hashtbl.create 17 in
+  let count = ref 0 in
+  let r = ref first in
+  while !r.next <> None do
+    if not (CNF.is_trivial (get_val !r)) then begin
+      Hashtbl.add reloc !count !r;
+      incr count
+    end;
+    r := next !r
+  done;
+  if not (CNF.is_trivial (get_val !r)) then Hashtbl.add reloc !count !r;
+  nvars,first,last,reloc
+
+
+
+(******************************************************************************)
+(** Given a cnf (dimacs) file and a certificate, check and build a theorem    *)
+(******************************************************************************)
+
+let sat_checker_modules = [ ["SMTCoq";"Trace";"Sat_Checker"] ]
+
+let certif_ops = CoqTerms.make_certif_ops sat_checker_modules
+let cCertif = gen_constant sat_checker_modules "Certif"
+
+let parse_certif dimacs trace fdimacs ftrace =
+  SmtTrace.clear ();
+  let _,first,last,reloc = import_cnf fdimacs in
+  let d = CNF.make_roots first last in
+  let ce1 = Structures.mkConst d in
+  let _ = declare_constant dimacs (DefinitionEntry ce1, IsDefinition Definition) in
+
+  let max_id, confl = CNF.import_cnf_trace reloc ftrace first last in
+  let (tres,_) = SmtTrace.to_coq (fun _ -> assert false) certif_ops confl in
+  let certif =
+   mklApp cCertif [|mkInt (max_id + 1); tres;mkInt (get_pos confl)|] in
+  let ce2 = Structures.mkConst certif in
+  let _ = declare_constant trace (DefinitionEntry ce2, IsDefinition Definition) in
+  ()
+
+let cdimacs = gen_constant sat_checker_modules "dimacs"
+let ccertif = gen_constant sat_checker_modules "certif"
+let ctheorem_checker = gen_constant sat_checker_modules "theorem_checker"
+let cchecker = gen_constant sat_checker_modules "checker"
+
+let theorem name fdimacs ftrace =
+  SmtTrace.clear ();
+  let _,first,last,reloc = import_cnf fdimacs in
+  let d = CNF.make_roots first last in
+
+  let max_id, confl = CNF.import_cnf_trace reloc ftrace first last in
+  let (tres,_) =
+    SmtTrace.to_coq (fun _ -> assert false) certif_ops confl in
+  let certif =
+   mklApp cCertif [|mkInt (max_id + 1);tres;mkInt (get_pos confl)|] in
+
+  let theorem_concl = mklApp cnot [|mklApp cis_true [|CNF.interp_roots first last|] |] in
+  let vtype = Term.mkProd(Names.Anonymous, Lazy.force cint, Lazy.force cbool) in
+  let theorem_type =
+    Term.mkProd (mkName "v", vtype, theorem_concl) in
+  let theorem_proof =
+   Term.mkLetIn (mkName "d", d, Lazy.force cdimacs,
+   Term.mkLetIn (mkName "c", certif, Lazy.force ccertif,
+   Term.mkLambda (mkName "v", vtype,
+   mklApp ctheorem_checker
+               [| Term.mkRel 3(*d*); Term.mkRel 2(*c*);
+		  vm_cast_true
+		    (mklApp cchecker [|Term.mkRel 3(*d*); Term.mkRel 2(*c*)|]);
+                  Term.mkRel 1(*v*)|]))) in
+  let ce = Structures.mkConst theorem_proof in
+  let _ = declare_constant name (DefinitionEntry ce, IsDefinition Definition) in
+  ()
+
+
+let checker fdimacs ftrace =
+  SmtTrace.clear ();
+  let _,first,last,reloc = import_cnf fdimacs in
+  let d = CNF.make_roots first last in
+
+  let max_id, confl = CNF.import_cnf_trace reloc ftrace first last in
+  let (tres,_) =
+    SmtTrace.to_coq (fun _ -> assert false) certif_ops confl in
+  let certif =
+    mklApp cCertif [|mkInt (max_id + 1);tres;mkInt (get_pos confl)|] in
+
+  let tm = mklApp cchecker [|d; certif|] in
+  let expr = Constrextern.extern_constr true Environ.empty_env tm in
+  Vernacentries.interp (Vernacexpr.VernacCheckMayEval (Some Structures.glob_term_CbvVm, None, expr))
 
 
 
