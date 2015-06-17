@@ -23,8 +23,7 @@ open CoqTerms
 open SmtForm
 open SmtCertif
 open SmtTrace
-(* open SatAtom *)
-open SmtMisc
+open SmtInt
 
 
 module ZChaff (Form:FORM) = struct
@@ -623,19 +622,23 @@ let build_body ro ra rf l b (max_id, confl) =
 
 (* Pre-process the proof given by zchaff *)
 
-let make_proof (* pform_tbl atom_tbl *) env reify_form l =
+let make_proof (* pform_tbl atom_tbl env *) reify_form reify_atom l =
   let fl = IntAtom.Form.flatten reify_form l in
   let root : IntAtom.Form.t SmtCertif.clause = SmtTrace.mkRootV [l] in
   let _ =
     if IntAtom.Form.equal l fl then IntAtom.Cnf.make_cnf reify_form root
+    (* if IntAtom.Form.equal l fl then MakeBB.make_bb reify_form reify_atom root *)
     else
       let first_c = SmtTrace.mkOther (ImmFlatten(root,fl)) (Some [fl]) in
       SmtTrace.link root first_c;
       IntAtom.Cnf.make_cnf reify_form first_c in
+      (* MakeBB.make_bb reify_form reify_atom first_c in *)
   let (reloc, resfilename, logfilename, last) =
     INT.call_zchaff (IntAtom.Form.nvars reify_form) root in
-  (* (try *) INT.check_unsat resfilename (* with *)
-  (*   | INT.Sat model -> Structures.error (List.fold_left (fun acc i -> *)
+  (try INT.check_unsat resfilename with
+    | INT.Sat model -> Structures.error
+       "zchaff found a counterexample (not available yet for this tactic)"
+  (*     (List.fold_left (fun acc i -> *)
   (*     let index = if i > 0 then i-1 else -i-1 in *)
   (*     let ispos = i > 0 in *)
   (*     try ( *)
@@ -648,7 +651,7 @@ let make_proof (* pform_tbl atom_tbl *) env reify_form l =
   (*         | Fapp _ -> acc *)
   (*     ) with | Invalid_argument _ -> acc (\* Because cnf computation does not put the new formulas in the table... Perhaps it should? *\) *)
   (*   ) "zchaff found a counterexample:\n" model) *)
-  (* ) *);
+  );
   INT.import_cnf_trace reloc logfilename root last
 
 
@@ -657,22 +660,24 @@ let make_proof (* pform_tbl atom_tbl *) env reify_form l =
 let int_decide gl =
   SmtTrace.clear ();
 
+  let ro = IntAtom.Op.create () in
+  let reify_atom = IntAtom.Atom.create () in
+  let reify_form = IntAtom.Form.create () in
+
   let env = Tacmach.pf_env gl in
   let sigma = Tacmach.project gl in
   let t = Tacmach.pf_concl gl in
 
   let (forall_let, concl) = Term.decompose_prod_assum t in
+  let env = Environ.push_rel_context forall_let env in
   let a, b = get_arguments concl in
-  let ro = IntAtom.Op.create () in
-  let reify_atom = IntAtom.Atom.create () in
-  let reify_form = IntAtom.Form.create () in
   let body =
-    if (b = Lazy.force ctrue || b = Lazy.force cfalse) then
+    if (b = Lazy.force ctrue || b = Lazy.force cfalse) then (
       let l = IntAtom.Form.of_coq (IntAtom.Atom.of_coq ro reify_atom env sigma) reify_form a in
       let l' = if b = Lazy.force ctrue then IntAtom.Form.neg l else l in
-      let max_id_confl = make_proof (* pform_tbl atom_tbl *) (Environ.push_rel_context forall_let env) reify_form l' in
+      let max_id_confl = make_proof (* pform_tbl atom_tbl env *) reify_form reify_atom l' in
       build_body ro reify_atom reify_form (IntAtom.Form.to_coq l) b max_id_confl
-    else assert false
+    ) else assert false
       (* let l1 = IntAtom.Form.of_coq (IntAtom.Atom.get reify_atom) reify_form a in *)
       (* let l2 = IntAtom.Form.of_coq (IntAtom.Atom.get reify_atom) reify_form b in *)
       (* let l = IntAtom.Form.neg (IntAtom.Form.get reify_form (Fapp(Fiff,[|l1;l2|]))) in *)

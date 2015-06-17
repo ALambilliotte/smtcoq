@@ -1278,7 +1278,7 @@ Qed.
 
 (* Decision procedure for arithmetic on machine integers (work in progress) *)
 
-Goal forall a, a || negb a.
+Goal forall (a:bool), a || negb a.
   int_decide.
 Qed.
 
@@ -1376,3 +1376,10 @@ Qed.
 Goal forall a, negb (a || negb a) = false.
   int_decide.
 Qed.
+
+(*
+(* Goal forall (x:bool), x. *)
+Goal forall (x:int), x == x.
+  int_decide.
+Qed.
+*)

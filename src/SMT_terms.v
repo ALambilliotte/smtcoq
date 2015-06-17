@@ -1366,7 +1366,8 @@ Module Atom.
   Definition bval_empty_t_i := bval empty_t_i.
   Definition Bval_empty_t_i := Bval empty_t_i.
   Definition tval_cst_empty_t_i (x:bval_empty_t_i) := tval_cst _ x.
-  Definition t_func_cst_empty_t_i (x:PArray.array (bval_empty_t_i)) := PArray.map tval_cst_empty_t_i x.
+  (* Should be PArray.map, but it is currently bogus *)
+  Definition t_func_cst_empty_t_i (x:PArray.array (bval_empty_t_i)) := PArray.mapi (fun _ => tval_cst_empty_t_i) x.
 
   Definition check_atom t_atom :=
     match default t_atom with

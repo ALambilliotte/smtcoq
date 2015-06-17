@@ -278,6 +278,7 @@ module Atom =
       | CCbit
       | CClxor
       | CCeqb
+      | CCeq63
       | CCunknown
 
     let op_tbl () =
@@ -286,7 +287,8 @@ module Atom =
       List.iter add
 	[ cbit, CCbit;
           clxor, CClxor;
-          ceqb,CCeqb
+          ceqb,CCeqb;
+          ceq63,CCeq63
         ];
       tbl
 
@@ -296,7 +298,9 @@ module Atom =
       let op_tbl = Lazy.force op_tbl in
       let get_cst c =
 	try Hashtbl.find op_tbl c with Not_found -> CCunknown in
+
       let mk_cop op = get reify (Acop op) in
+
       let rec mk_hatom h =
         if Structures.isInt h then mk_cop (CO_int (mk_int63 h)) else
 	let c, args = Term.decompose_app h in
@@ -307,6 +311,7 @@ module Atom =
                | _ -> assert false)
           | CClxor -> mk_bop BO_int_xor args
           | CCeqb -> mk_bop (BO_eq Tbool) args
+          | CCeq63 -> mk_bop (BO_eq Tint) args
 	  | CCunknown -> mk_unknown h (Retyping.get_type_of env sigma h)
 
       and mk_uop op = function
@@ -347,7 +352,7 @@ module Atom =
         let cargs = mklApp cnil [|Lazy.force cint|] in
         mklApp cAapp [|cop; cargs|]
 
-    let dft_atom = lazy (mklApp cAcop [| mklApp cCO_int [|Structures.mkInt 0|] |])
+    let dft_atom = lazy (mklApp cAcop [| Lazy.force cCO_xH |])
 
     let to_array reify dft f =
       let t = Array.make (reify.count + 1) dft in

@@ -48,13 +48,11 @@ END
 
 TACTIC EXTEND zchaff
 | [ "zchaff" ] -> [ Zchaff.tactic ]
-| [ "int_decide" ] -> [ Zchaff.int_decide ]
 END
 
-(* Do not know why this does not work *)
-(* TACTIC EXTEND int_decide *)
-(* | [ "int_decide" ] -> [ Zchaff.int_decide ] *)
-(* END *)
+TACTIC EXTEND int_decide
+| [ "int_decide" ] -> [ Zchaff.int_decide ]
+END
 
 TACTIC EXTEND verit
 | [ "verit" ] -> [ Verit.tactic ]
