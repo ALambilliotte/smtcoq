@@ -626,13 +626,11 @@ let make_proof (* pform_tbl atom_tbl env *) reify_form reify_atom l =
   let fl = IntAtom.Form.flatten reify_form l in
   let root : IntAtom.Form.t SmtCertif.clause = SmtTrace.mkRootV [l] in
   let _ =
-    if IntAtom.Form.equal l fl then IntAtom.Cnf.make_cnf reify_form root
-    (* if IntAtom.Form.equal l fl then MakeBB.make_bb reify_form reify_atom root *)
+    if IntAtom.Form.equal l fl then MakeBB.make_bb reify_form reify_atom root
     else
       let first_c = SmtTrace.mkOther (ImmFlatten(root,fl)) (Some [fl]) in
       SmtTrace.link root first_c;
-      IntAtom.Cnf.make_cnf reify_form first_c in
-      (* MakeBB.make_bb reify_form reify_atom first_c in *)
+      MakeBB.make_bb reify_form reify_atom first_c in
   let (reloc, resfilename, logfilename, last) =
     INT.call_zchaff (IntAtom.Form.nvars reify_form) root in
   (try INT.check_unsat resfilename with

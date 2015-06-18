@@ -164,9 +164,13 @@ module Op =
         (op.index,value.tres,op)::acc in
       Hashtbl.fold set reify.tbl []
 
-    let c_equal op1 op2 = op1 == op2
+    let c_equal op1 op2 =
+      match op1, op2 with
+        | CO_int i, CO_int j -> i == j
 
-    let u_equal op1 op2 = op1 == op2
+    let u_equal op1 op2 =
+      match op1, op2 with
+        | UO_index i, UO_index j -> i == j
 
     let b_equal op1 op2 =
       match op1,op2 with

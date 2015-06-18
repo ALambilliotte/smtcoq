@@ -29,9 +29,13 @@ open SmtTrace
 
 (* TODO:
    - support other integer operations (currently supported: equality)
-   - generate only the tautologies needed depending on polarity
+   - generate only the tautologies needed depending on polarity, and
+     remove unused ones
    - support Immediate rules
- *)
+   - support generation of tautologies "on the fly" (instead of
+     everything at the beginning) to have fewer clauses alive at the
+     same time (lazy bit-blasting)
+*)
 
 module MakeBB = struct
 
@@ -102,7 +106,7 @@ module MakeBB = struct
   let make_bb rf ra c =
     last := c;
     (match c.value with
-      | Some ls -> List.iter (fun l -> bb rf ra (Form l)) ls
+      | Some ls -> List.iter (fun l -> not_in_cnf := l::!(not_in_cnf); bb rf ra (Form l)) ls
       | None -> assert false);
     let aux = !last in
     let res = Cnf.make_cnf_list rf aux !not_in_cnf in
