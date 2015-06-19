@@ -481,31 +481,30 @@ Section Checker.
       apply andb_true_iff in H6; destruct H6 as (H6,H7);apply andb_true_iff in H6; destruct H6 as (H6,H9); subst t.
 
       rewrite forallbi_spec in H7; unfold C.interp;apply existsb_exists.
- 
-      case_eq (i1 == i2);intros H8.
-    
-      rewrite Int63Properties.eqb_spec in H6;rewrite Int63Properties.eqb_spec in H8; subst i2.
-  
+      
+      case_eq (interp_atom (t_atom.[i1])); intros t1' v1 H00.
+      case_eq (interp_atom (t_atom.[i2])); intros t2' v2 H01.
+      case_eq (Typ.cast t1' Typ.Tint);intros k1. intro H02.
+      case_eq (Typ.cast t2' Typ.Tint);intros k2. intro H03.
+      
+      case_eq (k1 (Typ.interp t_i) v1 == k2 (Typ.interp t_i) v2);intro H8.
+      rewrite Int63Properties.eqb_spec in H8;rewrite Int63Properties.eqb_spec in H6.
+
       exists (lits.[0]);split.
-      apply to_list_In; rewrite H6; reflexivity.
-      unfold Lit.interp; rewrite H9; unfold Var.interp; rewrite rho_interp; rewrite H; simpl;unfold Atom.interp_form_hatom; unfold interp_hatom; rewrite !t_interp_wf.   
+      apply to_list_In;rewrite H6;reflexivity.
+      
+      unfold Lit.interp. rewrite H9; unfold Var.interp; rewrite rho_interp; rewrite H; simpl;unfold Atom.interp_form_hatom; unfold interp_hatom; rewrite !t_interp_wf.   
       rewrite H0; simpl; unfold interp_bop; rewrite H1; simpl; rewrite !t_interp_wf.
-      case_eq (interp_atom (t_atom.[i1])); intros t' v H32;simpl.
-      case_eq (Typ.cast t' Typ.Tint); intros k. intro H34.
-      simpl. apply Int63Properties.eqb_spec. trivial.
-      admit.
-      apply wf_t_atom. apply def_t_atom. apply wf_t_atom. apply def_t_atom.
-
-      rewrite H4; rewrite H2; simpl; unfold interp_cop;rewrite H5; rewrite H3; simpl; rewrite Int63Properties.eqb_spec;trivial.
-      apply wf_t_atom. apply def_t_atom. apply wf_t_atom. apply def_t_atom. apply wf_t_atom. apply def_t_atom. 
+      unfold apply_binop;rewrite H01;rewrite H03; rewrite H00; rewrite H02;simpl; apply Int63Properties.eqb_spec;apply H8.
+      apply wf_t_atom. apply def_t_atom. apply wf_t_atom. apply def_t_atom. apply wf_t_atom. apply def_t_atom.
 
 
-      apply Int63Properties.eqb_spec in H6. apply Int63Properties.eqb_false_spec in H8; apply bit_eq_false in H8; inversion H8; destruct H10; clear H8.
+      apply Int63Properties.eqb_spec in H6. apply Int63Properties.eqb_false_spec in H8; apply bit_eq_false in H8; inversion H8. destruct H2 as (H10,H11); clear H8.
       exists (lits.[x+1]);split. 
       apply (to_list_In lits (x+1)); rewrite H6; rewrite inf_plus_un; trivial; reflexivity;  apply H11.
       
       assert (H12 := H7 (x+1)); rewrite H6 in H12; rewrite inf_plus_un in H12;clear H7. 
-      assert ( (true = true ->
+      assert ((true = true ->
       (if x + 1 == 0
        then Lit.is_pos (lits .[ x + 1])
        else
@@ -516,21 +515,13 @@ Section Checker.
                 match t_form .[ Lit.blit l2] with
                 | Fatom a2 =>
                     match t_atom .[ a1] with
-                    | Auop (UO_index j) hx1 =>
+                    | Auop (UO_index j) h1' =>
                         match t_atom .[ a2] with
-                        | Auop (UO_index k) hy1 =>
-                            match t_atom .[ hx1] with
-                            | Acop (CO_int x1) =>
-                                match t_atom .[ hy1] with
-                                | Acop (CO_int y1) =>
-                                    Lit.is_pos l1 && Lit.is_pos l2 &&
-                                    negb (Lit.is_pos (lits .[ x + 1])) &&
-                                    (j == x + 1 - 1) && (k == j) &&
-                                    (i2 == x1) && (i3 == y1)
-                                | _ => false
-                                end
-                            | _ => false
-                            end
+                        | Auop (UO_index k) h2' =>
+                            Lit.is_pos l1 && Lit.is_pos l2 &&
+                            negb (Lit.is_pos (lits .[ x + 1])) &&
+                            (j == x + 1 - 1) && (k == j) && (i1 == h1') &&
+                            (h2' == i2)
                         | _ => false
                         end
                     | _ => false
@@ -550,21 +541,13 @@ Section Checker.
                 match t_form .[ Lit.blit l2] with
                 | Fatom a2 =>
                     match t_atom .[ a1] with
-                    | Auop (UO_index j) hx1 =>
+                    | Auop (UO_index j) h1' =>
                         match t_atom .[ a2] with
-                        | Auop (UO_index k) hy1 =>
-                            match t_atom .[ hx1] with
-                            | Acop (CO_int x1) =>
-                                match t_atom .[ hy1] with
-                                | Acop (CO_int y1) =>
-                                    Lit.is_pos l1 && Lit.is_pos l2 &&
-                                    negb (Lit.is_pos (lits .[ x + 1])) &&
-                                    (j == x + 1 - 1) && (k == j) &&
-                                    (i2 == x1) && (i3 == y1)
-                                | _ => false
-                                end
-                            | _ => false
-                            end
+                        | Auop (UO_index k) h2' =>
+                            Lit.is_pos l1 && Lit.is_pos l2 &&
+                            negb (Lit.is_pos (lits .[ x + 1])) &&
+                            (j == x + 1 - 1) && (k == j) && (i1 == h1') &&
+                            (h2' == i2)
                         | _ => false
                         end
                     | _ => false
@@ -574,29 +557,29 @@ Section Checker.
             | _ => false
             end
         | _ => false
-        end) = true);intros. apply H7; trivial. apply H7 in H12; clear H7.
-        assert (x + 1 == 0 = false). apply eqb_false_spec; apply not_0_ltb; apply succ_max_int. apply (ltb_trans x digits max_int). apply H11. reflexivity. rewrite H7 in H12.
-        case_eq (t_form .[ Lit.blit (lits .[ x + 1])]); intros; rewrite H8 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (t_form .[ Lit.blit i4]); intros; rewrite H13 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (t_form .[ Lit.blit i5]); intros; rewrite H14 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (t_atom .[i6]); intros; rewrite H15 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (u); intros; rewrite H16 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (t_atom .[ i7]); intros; rewrite H17 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (u0); intros; rewrite H18 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (t_atom.[i8]); intros; rewrite H19 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (c1); intros; rewrite H20 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (t_atom.[i10]); intros; rewrite H21 in H12; try (apply diff_false_true in H12; inversion H12).
-        case_eq (c2); intros; rewrite H22 in H12; try (apply diff_false_true in H12; inversion H12).
-        apply andb_true_iff in H12; destruct H12;apply andb_true_iff in H12; destruct H12;apply andb_true_iff in H12; destruct H12;apply andb_true_iff in H12; destruct H12;apply andb_true_iff in H12; destruct H12;apply andb_true_iff in H12; destruct H12.
-        apply negb_true_iff in H27; apply Int63Properties.eqb_spec in H23;apply Int63Properties.eqb_spec in H24;apply Int63Properties.eqb_spec in H26;apply Int63Properties.eqb_spec in H25; subst i13;subst i12;subst i11; subst i9; rewrite <- H16 in H18; subst u0.
+        end) = true). intro H13. apply H12; trivial. apply H2 in H12; clear H2.
+        assert (x + 1 == 0 = false) as H7. apply eqb_false_spec; apply not_0_ltb; apply succ_max_int. apply (ltb_trans x digits max_int). apply H11. reflexivity. rewrite H7 in H12.
+        case_eq (t_form .[ Lit.blit (lits .[ x + 1])]); [intros i02 H2|intro H2|intro H2|intros i02 i03 H2|intros i02 H2|intros i02 H2| intros i02 H2| intros i02 i03 H2|intros l1 l2 H2|intros i02 i3 i4 H2]; rewrite H2 in H12; try (apply diff_false_true in H12; inversion H12).
+        case_eq (t_form .[ Lit.blit l1]); [intros a1 H3|intros H3|intro H3|intros a1 a2 H3| intros a1 H3|intros z H3| intros z H3|intros z1 z2 H3|intros z1 z2 H3|intros z1 z2 z3 H3];rewrite H3 in H12; try (apply diff_false_true in H12; inversion H12).
+        case_eq (t_form .[ Lit.blit l2]); [intros a2 H4|intros H4|intro H4|intros z1 z2 H4| intros z2 H4|intros z H4| intros z H4|intros z1 z2 H4|intros z1 z2 H4|intros z1 z2 z3 H4]; rewrite H4 in H12; try (apply diff_false_true in H12; inversion H12).
+        case_eq (t_atom .[a1]); [intros z1 H05|intros u1 h1' H05|intros z3 z1 z2 H05|intros z1 z2 H05|intros z1 z2 H05]; rewrite H05 in H12; try (apply diff_false_true in H12; inversion H12).
+        case_eq (u1); [intro H06|intro H06|intro H06|intro H06|intro H06|intros j H06]; rewrite H06 in H12; try (apply diff_false_true in H12; inversion H12).
+        case_eq (t_atom .[a2]); [intros z1 H07|intros u2 h2' H07|intros z3 z1 z2 H07|intros z1 z2 H07|intros z1 z2 H07]; rewrite H07 in H12; try (apply diff_false_true in H12; inversion H12).
+        case_eq (u2); [intro H08|intro H08|intro H08|intro H08|intro H08|intros k H08]; rewrite H08 in H12; try (apply diff_false_true in H12; inversion H12).
+        apply andb_true_iff in H12; destruct H12 as (H12,H13);apply andb_true_iff in H12; destruct H12 as (H12,H14);apply andb_true_iff in H12; destruct H12 as (H12,H15);apply andb_true_iff in H12; destruct H12 as (H12,H16);apply andb_true_iff in H12; destruct H12 as (H12,H17);apply andb_true_iff in H12; destruct H12 as (H12,H18). 
+        apply negb_true_iff in H17; apply Int63Properties.eqb_spec in H16;apply Int63Properties.eqb_spec in H14;apply Int63Properties.eqb_spec in H15;apply Int63Properties.eqb_spec in H13; subst j;subst k;subst h1'; subst h2'; rewrite <- H06 in H08; subst u2.
         
-        unfold Lit.interp; rewrite H27; apply negb_true_iff; unfold Var.interp; rewrite rho_interp. rewrite H8; simpl; unfold Lit.interp. rewrite H12;rewrite H28; unfold Var.interp; rewrite !rho_interp. rewrite H13; rewrite H14; simpl; unfold Atom.interp_form_hatom; unfold interp_hatom; rewrite !t_interp_wf.
-        rewrite H17; rewrite H15; simpl; unfold interp_uop. rewrite H16; rewrite !t_interp_wf. 
-        rewrite H21; rewrite H19; simpl; unfold interp_cop; rewrite H20; rewrite H22; simpl.
-        assert (x = x+1-1). rewrite <- to_Z_eq; rewrite (to_Z_sub_1 (x+1) 0). rewrite (to_Z_add_1 x max_int); intuition. apply (ltb_trans x digits max_int). apply H11. reflexivity. apply eqb_false_spec in H7; apply not_0_ltb in H7; apply H7. rewrite <- H18; unfold bit_rev; apply Bool.eqb_false_iff; apply H10.
-        
+        unfold Lit.interp; rewrite H17; apply negb_true_iff; unfold Var.interp; rewrite rho_interp. rewrite H2; simpl; unfold Lit.interp. rewrite H12;rewrite H18; unfold Var.interp; rewrite !rho_interp. rewrite H3; rewrite H4; simpl; unfold Atom.interp_form_hatom; unfold interp_hatom; rewrite !t_interp_wf.
+        rewrite H07; rewrite H05; simpl; unfold interp_uop. rewrite H06; rewrite !t_interp_wf. 
+        assert (x = x+1-1) as H5. rewrite <- to_Z_eq; rewrite (to_Z_sub_1 (x+1) 0). rewrite (to_Z_add_1 x max_int); intuition. apply (ltb_trans x digits max_int). apply H11. reflexivity. apply eqb_false_spec in H7; apply not_0_ltb in H7; apply H7. rewrite <- H5; unfold bit_rev; apply Bool.eqb_false_iff.
+        unfold apply_unop;rewrite H00;rewrite H01;rewrite H02;rewrite H03;simpl;apply H10.
         apply wf_t_atom. apply def_t_atom. apply wf_t_atom. apply def_t_atom. apply wf_t_atom. apply def_t_atom. apply wf_t_atom. apply def_t_atom.
         reflexivity. apply H11.
+        
+
+(* Ces deux admit correspondent aux case_eq (Typ.cast t1' Typ.Tint) et case_eq (Typ.cast t2' Typ.Tint)*)
+        admit.
+        admit.
    Qed.
  
   End Proof.
