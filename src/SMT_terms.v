@@ -1463,7 +1463,36 @@ About apply_nop.
         exists val0. simpl.
         assert (Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) l0 0) = match compute_interp Typ.Tint nil (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) | None => bvtrue end).
         rewrite H0;trivial.
-        rewrite H0.
+        (* rewrite H0. *)
+
+
+        revert val0 H1.
+        change ((fun x =>
+   forall val0,
+   Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) l 0) =
+   {|
+   v_type := v_type Typ.type interp_t
+               match x with
+               | Some a0 =>
+                   Bval Typ.Tint
+                     (List.fold_left (fun x y : int => x lor y) a0 0)
+               | None => bvtrue
+               end;
+   v_val := val0 |} ->
+   match x with
+   | Some a0 =>
+       Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0)
+   | None => bvtrue
+   end =
+   Bval
+     (v_type Typ.type interp_t
+        match x with
+        | Some a0 =>
+            Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0)
+        | None => bvtrue
+        end) val0) (compute_interp Typ.Tint nil (List.map (get a) l))).
+        rewrite H0. simpl. intros val0 H1.
+
 
 
         assert (forall acc, List.forallb (fun h0 : int => h0 < h) l = true -> exists v, match compute_interp (get a) A acc l with | Some l0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A)Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) (rev l0)) | None => bvtrue end = Bval (v_type Typ.type interp_t match compute_interp (get a) A acc l with | Some l0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A) (rev l0)) | None => bvtrue end) v); auto; induction l as [ |i l IHl]; simpl.
