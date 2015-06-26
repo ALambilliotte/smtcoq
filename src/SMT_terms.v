@@ -1453,20 +1453,14 @@ About apply_nop.
         case (Typ.cast (v_type Typ.type interp_t (a .[ h1])) Typ.Tint); simpl; try (exists true; auto); intro k1; case (Typ.cast (v_type Typ.type interp_t (a .[ h2])) Typ.Tint); simpl; try (intro k2; exists (k1 interp_t x lxor k2 interp_t y)%int63; auto); exists true;auto.
         case (Typ.cast (v_type Typ.type interp_t (a .[ h1])) A); simpl; try (exists true; auto); intro k1; case (Typ.cast (v_type Typ.type interp_t (a .[ h2])) A) as [k2| ]; simpl; try (exists true; reflexivity); exists (Typ.i_eqb t_i A (k1 interp_t x) (k2 interp_t y)); auto.
         (* N-ary operators *)
-        intros [l|l|A l].
-        intro H;simpl. unfold apply_nop.
-        case_eq (compute_interp Typ.Tint nil (List.map (get a) l)); [intros l0 H0|intros H0];simpl.
-        case_eq (Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) l 0)); intros t val H1.
-        assert (t = (v_type Typ.type interp_t match compute_interp Typ.Tint nil (List.map (get a) l) with | Some a0 =>  Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) | None => bvtrue end)).
-        rewrite H0; simpl; inversion H1;trivial.
-        subst t.
-        exists val0. simpl.
-        assert (Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) l0 0) = match compute_interp Typ.Tint nil (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) | None => bvtrue end).
-        rewrite H0;trivial.
-        rewrite H1.
-
-
-        assert (forall acc, List.forallb (fun h0 : int => h0 < h) l = true -> exists v, match compute_interp (get a) A acc l with | Some l0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A)Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) (rev l0)) | None => bvtrue end = Bval (v_type Typ.type interp_t match compute_interp (get a) A acc l with | Some l0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A) (rev l0)) | None => bvtrue end) v); auto; induction l as [ |i l IHl]; simpl.
+        intros [l|l|A l];unfold interp_nop;unfold apply_nop.
+        assert (forall acc,List.forallb (fun h0 : int => h0 < h) l = true -> exists v : interp_t (v_type Typ.type interp_t match compute_interp Typ.Tint acc (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) | None => bvtrue end), match compute_interp Typ.Tint acc (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) | None => bvtrue end = Bval (v_type Typ.type interp_t match compute_interp Typ.Tint acc (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) | None => bvtrue end) v);auto; induction l as [ |i l IHl];simpl.
+        intro acc; exists ((List.fold_left (fun x y : int => x lor y) acc 0));trivial.
+        intro acc;simpl; rewrite andb_true_iff;intros [H1 H2]; destruct (IH _ H1) as [va Hva]; rewrite Hva; simpl; case (Typ.cast (v_type Typ.type interp_t (a .[ i])) Typ.Tint);simpl;try (exists true;auto); intro k; destruct (IHl (k interp_t va :: acc) H2) as [vb Hvb]; exists vb; exact Hvb.
+        assert (forall acc,List.forallb (fun h0 : int => h0 < h) l = true -> exists v : interp_t (v_type Typ.type interp_t match compute_interp Typ.Tint acc (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x land y) a0 max_int) | None => bvtrue end), match compute_interp Typ.Tint acc (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x land y) a0 max_int) | None => bvtrue end = Bval (v_type Typ.type interp_t match compute_interp Typ.Tint acc (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x land y) a0 max_int) | None => bvtrue end) v);auto; induction l as [ |i l IHl];simpl.
+        intro acc; exists ((List.fold_left (fun x y : int => x land y) acc max_int));trivial.
+        intro acc;simpl; rewrite andb_true_iff;intros [H1 H2]; destruct (IH _ H1) as [va Hva]; rewrite Hva; simpl; case (Typ.cast (v_type Typ.type interp_t (a .[ i])) Typ.Tint);simpl;try (exists true;auto); intro k; destruct (IHl (k interp_t va :: acc) H2) as [vb Hvb]; exists vb; exact Hvb.
+        assert (forall acc, List.forallb (fun h0 : int => h0 < h) l = true -> exists v : interp_t (v_type Typ.type interp_t match compute_interp A acc (List.map (get a) l) with | Some a0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A) (rev a0)) | None => bvtrue end), match compute_interp A acc (List.map (get a) l) with | Some a0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A) (rev a0)) | None => bvtrue end = Bval (v_type Typ.type interp_t match compute_interp A acc (List.map (get a) l) with | Some a0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A) (rev a0)) | None => bvtrue end) v); auto; induction l as [ |i l IHl]; simpl.
         intros acc _; exists (distinct (Typ.i_eqb t_i A) (rev acc)); auto.
         intro acc; rewrite andb_true_iff; intros [H1 H2]; destruct (IH _ H1) as [va Hva]; rewrite Hva; simpl; case (Typ.cast (v_type Typ.type interp_t (a .[ i])) A); simpl; try (exists true; auto); intro k; destruct (IHl (k interp_t va :: acc) H2) as [vb Hvb]; exists vb; auto.
         (* Application *)

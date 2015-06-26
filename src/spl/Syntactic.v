@@ -71,6 +71,7 @@ Section CheckAtom.
             | BO_Zle, BO_Zge
             | BO_Zgt, BO_Zlt
             | BO_Zlt, BO_Zgt => check_hatom a1 b2 && check_hatom a2 b1
+            | BO_int_xor,BO_int_xor => (check_hatom a1 b1 && check_hatom a2 b2) || (check_hatom a1 b2 && check_hatom a2 b1)
             | BO_eq t1, BO_eq t2 =>
               Typ.eqb t1 t2 &&
               ((check_hatom a1 b1 && check_hatom a2 b2) ||
@@ -79,7 +80,10 @@ Section CheckAtom.
           end
         | Anop o1 l1, Anop o2 l2 =>
           match o1, o2 with
+            | NO_int_or,NO_int_or
+            | NO_int_and,NO_int_and => list_beq check_hatom l1 l2
             | NO_distinct t1, NO_distinct t2 => Typ.eqb t1 t2 && list_beq check_hatom l1 l2
+            | _,_ => false
           end
         | Aapp f1 aargs, Aapp f2 bargs =>(f1 == f2) && list_beq check_hatom aargs bargs
 
