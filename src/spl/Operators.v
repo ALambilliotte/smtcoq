@@ -15,8 +15,6 @@
 
 (*** Spl -- a small checker for simplifications ***)
 
-Add LoadPath ".." as SMTCoq.
-Add LoadPath "../lia" as SMTCoq.lia.
 Require Import List PArray Bool Int63 ZMicromega.
 Require Import Misc State SMT_terms.
 Require Lia.
@@ -172,8 +170,8 @@ Section Operators.
             get_atom a = Atom.Abop (Atom.BO_eq A) y x))).
   Proof.
     intros A dist diseq; unfold check_diseqs; rewrite andb_true_iff, PArray.forallb_spec, check_diseqs_complete_spec, length_mapi; split; intros [H1 H2]; split.
-    clear H2; intros i Hi; generalize (H1 _ Hi); rewrite get_mapi; auto; case_eq (Lit.is_pos (diseq .[ i])); try discriminate; intro Heq1; case_eq (get_form (Lit.blit (diseq .[ i]))); try discriminate; intros a Heq2; case_eq (get_atom a); try discriminate; intros [ | | | | | | | | | |B]; try discriminate; intros h1 h2 Heq3; case_eq (Typ.eqb A B); try discriminate; change (Typ.eqb A B = true) with (is_true (Typ.eqb A B)); rewrite Typ.eqb_spec; intro; subst B; case_eq (h1 == h2); try discriminate; rewrite eqb_false_spec; intro H2; case_eq (check_in h1 dist); try discriminate; case_eq (check_in h2 dist); try discriminate; rewrite !check_in_spec; intros H3 H4 _; split; try discriminate; exists a; split; auto; exists h1, h2; repeat split; auto; rewrite <- In2_In; auto.
-    clear H1; intros x y Hxy; destruct (H2 _ _ Hxy) as [i [H1 H4]]; clear H2; rewrite get_mapi in H4; auto; exists i; split; auto; generalize H4; case_eq (Lit.is_pos (diseq .[ i])); intro Heq; try (intros [H|H]; discriminate); case_eq (get_form (Lit.blit (diseq .[ i]))); [intros a| | |intros a1 a2|intros a1|intros a1|intros a1|intros a1 a2|intros a1 a2|intros a1 a2 a3]; intro Heq2; try (intros [H|H]; discriminate); case_eq (get_atom a); [intros a1|intros a1 a2|intros [ | | | | | | | | | |B] h1 h2|intros a1 a2|intros a1 a2]; intro Heq3; try (intros [H|H]; discriminate); case_eq (Typ.eqb A B); try (intros _ [H|H]; discriminate); change (Typ.eqb A B = true) with (is_true (Typ.eqb A B)); rewrite Typ.eqb_spec; intro; subst B; case_eq (h1 == h2); try (intros _ [H|H]; discriminate); rewrite eqb_false_spec; intro H10; case (check_in h1 dist); try (intros [H|H]; discriminate); case (check_in h2 dist); try (intros [H|H]; discriminate); simpl; intro H3; split; try discriminate; exists a; split; auto; destruct H3 as [H3|H3]; inversion H3; subst; auto.
+    clear H2; intros i Hi; generalize (H1 _ Hi); rewrite get_mapi; auto; case_eq (Lit.is_pos (diseq .[ i])); try discriminate; intro Heq1; case_eq (get_form (Lit.blit (diseq .[ i]))); try discriminate; intros a Heq2; case_eq (get_atom a); try discriminate; intros [ | | | | | | | |B]; try discriminate; intros h1 h2 Heq3; case_eq (Typ.eqb A B); try discriminate; change (Typ.eqb A B = true) with (is_true (Typ.eqb A B)); rewrite Typ.eqb_spec; intro; subst B; case_eq (h1 == h2); try discriminate; rewrite eqb_false_spec; intro H2; case_eq (check_in h1 dist); try discriminate; case_eq (check_in h2 dist); try discriminate; rewrite !check_in_spec; intros H3 H4 _; split; try discriminate; exists a; split; auto; exists h1, h2; repeat split; auto; rewrite <- In2_In; auto.
+    clear H1; intros x y Hxy; destruct (H2 _ _ Hxy) as [i [H1 H4]]; clear H2; rewrite get_mapi in H4; auto; exists i; split; auto; generalize H4; case_eq (Lit.is_pos (diseq .[ i])); intro Heq; try (intros [H|H]; discriminate); case_eq (get_form (Lit.blit (diseq .[ i]))); [intros a| | |intros a1 a2|intros a1|intros a1|intros a1|intros a1 a2|intros a1 a2|intros a1 a2 a3]; intro Heq2; try (intros [H|H]; discriminate); case_eq (get_atom a); [intros a1|intros a1 a2|intros [ | | | | | | | |B] h1 h2|intros a1 a2|intros a1 a2]; intro Heq3; try (intros [H|H]; discriminate); case_eq (Typ.eqb A B); try (intros _ [H|H]; discriminate); change (Typ.eqb A B = true) with (is_true (Typ.eqb A B)); rewrite Typ.eqb_spec; intro; subst B; case_eq (h1 == h2); try (intros _ [H|H]; discriminate); rewrite eqb_false_spec; intro H10; case (check_in h1 dist); try (intros [H|H]; discriminate); case (check_in h2 dist); try (intros [H|H]; discriminate); simpl; intro H3; split; try discriminate; exists a; split; auto; destruct H3 as [H3|H3]; inversion H3; subst; auto.
     clear H2; intros i Hi; rewrite get_mapi; auto; destruct (H1 _ Hi) as [H2 [a [H3 [h1 [h2 [H4 [H5 H6]]]]]]]; clear H1; replace (Lit.is_pos (diseq .[ i])) with false by (case_eq (Lit.is_pos (diseq .[ i])); auto); rewrite H3, H4, Typ.eqb_refl; simpl; replace (h1 == h2) with false by (case_eq (h1 == h2); auto; rewrite eqb_spec; intro H; elim H5; auto); simpl; rewrite <- In2_In, <- !check_in_spec in H6; auto; destruct H6 as [H6 H7]; rewrite H6, H7; auto.
     clear H1; intros x y Hxy; destruct (H2 _ _ Hxy) as [i [H1 [H3 [a [H4 [H6 H5]]]]]]; clear H2; exists i; split; auto; rewrite get_mapi; auto; replace (Lit.is_pos (diseq .[ i])) with false by (case_eq (Lit.is_pos (diseq .[ i])); auto); rewrite H4; assert (H7 := or_introl (In2 y x dist) Hxy); rewrite <- In2_In, <- !check_in_spec in H7; auto; destruct H7 as [H7 H8]; destruct H5 as [H5|H5]; rewrite H5, Typ.eqb_refl; [replace (x == y) with false by (case_eq (x == y); auto; rewrite eqb_spec; auto)|replace (y == x) with false by (case_eq (y == x); auto; rewrite eqb_spec; auto)]; simpl; rewrite H7, H8; auto.
   Qed.
@@ -221,8 +219,10 @@ Section Operators.
       check_diseqs A dist diseq = true.
   Proof.
     intros ha diseq; unfold check_distinct; split.
-    case (get_atom ha); try discriminate; intros [A] l H; exists A; exists l; auto.
-    intros [A [dist [H1 H2]]]; rewrite H1; auto.
+    - case (get_atom ha); try discriminate.
+      intros [ | |A] l H; try discriminate.
+      exists A; exists l; auto.
+    - intros [A [dist [H1 H2]]]; rewrite H1; auto.
   Qed.
 
 
@@ -246,7 +246,7 @@ Section Operators.
        get_atom hb = Atom.Abop (Atom.BO_eq ty) y x).
   Proof.
     intros f1 f2; unfold check_distinct_two_args; split.
-    case (get_form f1); try discriminate; intro ha; case (get_form f2); try discriminate; intro hb; case_eq (get_atom ha); try discriminate; intros [A] [ |x [ |y [ |l]]] Heq1; try discriminate; case_eq (get_atom hb); try discriminate; intros [ | | | | | | | | | |B] x' y' Heq2; try discriminate; rewrite !andb_true_iff, orb_true_iff, !andb_true_iff; change (Typ.eqb A B = true) with (is_true (Typ.eqb A B)); rewrite Typ.eqb_spec, !Int63Properties.eqb_spec; intros [H1 [[H2 H3]|[H2 H3]]]; subst B x' y'; exists ha, hb, A, x, y; auto.
+    case (get_form f1); try discriminate; intro ha; case (get_form f2); try discriminate; intro hb; case_eq (get_atom ha); try discriminate; intros [ | |A] [ |x [ |y [ |l]]] Heq1; try discriminate; case_eq (get_atom hb); try discriminate; intros [ | | | | | | | |B] x' y' Heq2; try discriminate; rewrite !andb_true_iff, orb_true_iff, !andb_true_iff; change (Typ.eqb A B = true) with (is_true (Typ.eqb A B)); rewrite Typ.eqb_spec, !Int63Properties.eqb_spec; intros [H1 [[H2 H3]|[H2 H3]]]; subst B x' y'; exists ha, hb, A, x, y; auto.
     intros [ha [hb [A [x [y [H1 [H2 [H3 [H4|H4]]]]]]]]]; rewrite H1, H2, H3, H4, Typ.eqb_refl, !eqb_refl; auto; rewrite orb_true_r; auto.
   Qed.
 
@@ -278,26 +278,47 @@ Section Operators.
 
     Local Hint Immediate wf_t_atom default_t_atom default_t_form wf_t_form.
 
+    Lemma in2_map_iff A B (f:A -> B) l y1 y2 :
+      In2 y1 y2 (List.map f l) <-> (exists x1 x2 : A, f x1 = y1 /\ f x2 = y2 /\ In2 x1 x2 l).
+    Proof.
+      split.
+      - assert (H: forall l', In2 y1 y2 l' -> forall l, l' = List.map f l -> exists x1 x2 : A, f x1 = y1 /\ f x2 = y2 /\ In2 x1 x2 l); [ |intro H1; apply (H _ H1 _ (refl_equal _))].
+        clear l. intro l'. induction 1 as [l' H1|y3 l' Hl' IH]; intros l H.
+        * destruct l as [ |x1 l]; try discriminate.
+          simpl in H. inversion H. subst y1 l'. clear H.
+          rewrite in_map_iff in H1. destruct H1 as [x2 [H1 H2]]. subst y2.
+          exists x1, x2; repeat split; auto. now constructor.
+        * destruct l as [ |x1 l]; try discriminate.
+          simpl in H. inversion H. subst y3 l'. clear H.
+          destruct (IH _ (refl_equal _)) as [x2 [x3 [H1 [H2 H3]]]]. clear IH. subst y1 y2.
+          exists x2, x3. repeat split; auto. now constructor.
+      - intros [x1 [x2 [H1 [H2 H3]]]]. subst y1 y2. revert H3. induction 1 as [l' H1|y l' Hl' IH]; simpl.
+        * constructor. rewrite in_map_iff. exists x2; auto.
+        * now constructor.
+    Qed.
+
     Lemma interp_check_distinct : forall ha diseq,
       check_distinct ha diseq = true ->
       interp_form_hatom ha = afold_left bool int true andb (Lit.interp rho) diseq.
     Proof.
-      intros ha diseq; rewrite check_distinct_spec; intros [A [dist [H1 H2]]]; rewrite check_diseqs_spec in H2; destruct H2 as [H2 H3]; unfold Atom.interp_form_hatom, Atom.interp_bool, Atom.interp_hatom; rewrite Atom.t_interp_wf; auto; rewrite H1; simpl; generalize (Atom.compute_interp_spec_rev t_i (get (Atom.t_interp t_i t_func t_atom)) A dist); case (Atom.compute_interp t_i (get (Atom.t_interp t_i t_func t_atom)) A nil); simpl.
-      intros l H4; case_eq (distinct (Typ.i_eqb t_i A) (rev l)).
-      rewrite distinct_spec; intro H5; symmetry; apply afold_left_andb_true; intros i Hi; destruct (H2 _ Hi) as [H9 [a [H10 [h1 [h2 [H6 [H7 H8]]]]]]]; unfold Lit.interp; replace (Lit.is_pos (diseq .[ i])) with false by (case_eq (Lit.is_pos (diseq .[ i])); auto); unfold Var.interp; rewrite Form.wf_interp_form; auto; rewrite H10; simpl; rewrite Atom.t_interp_wf; auto; rewrite H6; simpl; unfold Atom.apply_binop; unfold Atom.wt in wt_t_atom; unfold is_true in wt_t_atom; rewrite forallbi_spec in wt_t_atom; assert (H11: a < length t_atom).
-      case_eq (a < length t_atom); auto; intro H11; rewrite (get_outofbound _ _ _ H11) in H6; rewrite default_t_atom in H6; inversion H6.
-      generalize (wt_t_atom _ H11); rewrite H6; simpl; rewrite !andb_true_iff; change (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) h1) A = true) with (is_true (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) h1) A)); change (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) h2) A = true) with (is_true (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) h2) A)); rewrite !Typ.eqb_spec; intros [[_ H13] H12]; generalize (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom h1); rewrite H13; intros [v1 HH1]; generalize (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom h2); rewrite H12; intros [v2 HH2]; rewrite HH1, HH2; simpl; rewrite Typ.cast_refl; simpl; destruct H8 as [H8|H8]; [ |rewrite Typ.i_eqb_sym]; rewrite H5; auto; rewrite H4; [exists h2; exists h1|exists h1; exists h2]; auto.
-      rewrite distinct_false_spec; intros [v2 [v1 [H5 H6]]]; rewrite H4 in H5; destruct H5 as [a [b [H5 [H7 H8]]]]; clear H4; change (Typ.i_eqb t_i A v2 v1 = true) with (is_true (Typ.i_eqb t_i A v2 v1)) in H6; rewrite Typ.i_eqb_spec in H6; subst v2; clear H2; destruct (H3 _ _ H5) as [i [H2 [H4 [hb [H6 [H9 H10]]]]]]; clear H3; symmetry; apply (afold_left_andb_false _ i); auto; unfold Lit.interp; replace (Lit.is_pos (diseq .[ i])) with false by (case_eq (Lit.is_pos (diseq .[ i])); auto); unfold Var.interp; rewrite Form.wf_interp_form; auto; rewrite H6; simpl; rewrite Atom.t_interp_wf; auto; destruct H10 as [H10|H10]; rewrite H10; simpl; rewrite H7, H8; simpl; rewrite Typ.cast_refl; simpl; replace (Typ.i_eqb t_i A v1 v1) with true; auto; symmetry; change (is_true (Typ.i_eqb t_i A v1 v1)); rewrite Typ.i_eqb_spec; auto.
-      intros [a [H20 H21]]; assert (H4: ha < length t_atom).
-      case_eq (ha < length t_atom); auto; intro Heq; generalize H1; rewrite get_outofbound; auto; rewrite default_t_atom; discriminate.
-      unfold Atom.wt in wt_t_atom; unfold is_true in wt_t_atom; rewrite forallbi_spec in wt_t_atom; generalize (wt_t_atom _ H4); rewrite H1; simpl; rewrite andb_true_iff, forallb_forall; intros [_ H5]; assert (H6 := H5 _ H20); generalize (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom a); intros [va Ha]; rewrite Ha in H21; simpl in H21; elim H21; apply Typ.eqb_spec; auto.
+      intros ha diseq. rewrite check_distinct_spec. intros [A [dist [H1 H2]]]. rewrite check_diseqs_spec in H2. destruct H2 as [H2 H3]. unfold Atom.interp_form_hatom, Atom.interp_bool, Atom.interp_hatom. rewrite Atom.t_interp_wf; auto. rewrite H1. simpl. generalize (Atom.compute_interp_spec_rev t_i A (List.map (get (Atom.t_interp t_i t_func t_atom)) dist)). unfold Atom.apply_nop. case (Atom.compute_interp t_i A nil (List.map (get (Atom.t_interp t_i t_func t_atom)) dist)); simpl.
+      - intros l H4. case_eq (distinct (Typ.i_eqb t_i A) (rev l)).
+        * rewrite distinct_spec. intro H5. symmetry. apply afold_left_andb_true. intros i Hi. destruct (H2 _ Hi) as [H9 [a [H10 [h1 [h2 [H6 [H7 H8]]]]]]]. unfold Lit.interp. replace (Lit.is_pos (diseq .[ i])) with false by (case_eq (Lit.is_pos (diseq .[ i])); auto). unfold Var.interp. rewrite Form.wf_interp_form; auto. rewrite H10. simpl. rewrite Atom.t_interp_wf; auto. rewrite H6. simpl. unfold Atom.apply_binop. unfold Atom.wt in wt_t_atom. unfold is_true in wt_t_atom. rewrite forallbi_spec in wt_t_atom. assert (H11: a < length t_atom).
+          case_eq (a < length t_atom); auto; intro H11; rewrite (get_outofbound _ _ _ H11) in H6; rewrite default_t_atom in H6; inversion H6.
+          generalize (wt_t_atom _ H11); rewrite H6; simpl; rewrite !andb_true_iff; change (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) h1) A = true) with (is_true (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) h1) A)); change (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) h2) A = true) with (is_true (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) h2) A)); rewrite !Typ.eqb_spec; intros [[_ H13] H12]; generalize (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom h1); rewrite H13; intros [v1 HH1]; generalize (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom h2); rewrite H12; intros [v2 HH2]; rewrite HH1, HH2; simpl; rewrite Typ.cast_refl; simpl; destruct H8 as [H8|H8]; [ |rewrite Typ.i_eqb_sym]; rewrite H5; auto; rewrite H4; [exists (Atom.t_interp t_i t_func t_atom .[ h2]); exists (Atom.t_interp t_i t_func t_atom .[ h1])|exists (Atom.t_interp t_i t_func t_atom .[ h1]); exists (Atom.t_interp t_i t_func t_atom .[ h2])]; split; auto; rewrite in2_map_iff; [exists h1, h2|exists h2, h1]; auto.
+        * rewrite distinct_false_spec. intros [v2 [v1 [H5 H6]]]. rewrite H4 in H5. destruct H5 as [a [b [H5 [H7 H8]]]]. clear H4. change (Typ.i_eqb t_i A v2 v1 = true) with (is_true (Typ.i_eqb t_i A v2 v1)) in H6. rewrite Typ.i_eqb_spec in H6. subst v2. clear H2. rewrite in2_map_iff in H5. destruct H5 as [h1 [h2 [Hh1 [Hh2 H5]]]]. subst a b. destruct (H3 _ _ H5) as [i [H2 [H4 [hb [H6 [H9 H10]]]]]]. clear H3. symmetry. apply (afold_left_andb_false _ i); auto. unfold Lit.interp. replace (Lit.is_pos (diseq .[ i])) with false by (case_eq (Lit.is_pos (diseq .[ i])); auto). unfold Var.interp. rewrite Form.wf_interp_form; auto. rewrite H6. simpl. rewrite Atom.t_interp_wf; auto. destruct H10 as [H10|H10]; rewrite H10; simpl; rewrite H7, H8; simpl; rewrite Typ.cast_refl; simpl; replace (Typ.i_eqb t_i A v1 v1) with true; auto; symmetry; change (is_true (Typ.i_eqb t_i A v1 v1)); rewrite Typ.i_eqb_spec; auto.
+      - intros [a [H20 H21]]; assert (H4: ha < length t_atom).
+        * case_eq (ha < length t_atom); auto; intro Heq; generalize H1; rewrite get_outofbound; auto; rewrite default_t_atom; discriminate.
+        * unfold Atom.wt in wt_t_atom. unfold is_true in wt_t_atom. rewrite forallbi_spec in wt_t_atom. generalize (wt_t_atom _ H4). rewrite H1. simpl. rewrite andb_true_iff, forallb_forall. intros [_ H5]. rewrite in_map_iff in H20. destruct H20 as [x [Hx H20]]. subst a. assert (H6 := H5 _ H20). generalize (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom x). intros [va Ha]. rewrite Ha in H21. simpl in H21. elim H21. apply Typ.eqb_spec. auto.
     Qed.
 
     Lemma interp_check_distinct_two_args : forall f1 f2,
       check_distinct_two_args f1 f2 = true ->
       rho f1 = negb (rho f2).
     Proof.
-      intros f1 f2; rewrite check_distinct_two_args_spec; intros [ha [hb [A [x [y [H1 [H2 [H3 [H4|H4]]]]]]]]]; unfold Form.interp_state_var; assert (H5: f1 < length t_form) by (case_eq (f1 < length t_form); auto; intro Heq; generalize H1; rewrite get_outofbound; auto; rewrite default_t_form; discriminate); assert (H6: f2 < length t_form) by (case_eq (f2 < length t_form); auto; intro Heq; generalize H2; rewrite get_outofbound; auto; rewrite default_t_form; discriminate); rewrite !Form.t_interp_wf; auto; rewrite H1, H2; simpl; unfold Atom.interp_form_hatom, Atom.interp_hatom; rewrite !Atom.t_interp_wf; auto; rewrite H3, H4; simpl; unfold Atom.wt,is_true in wt_t_atom; rewrite forallbi_spec in wt_t_atom; assert (H7: hb < length t_atom) by (case_eq (hb < length t_atom); auto; intro Heq; generalize H4; rewrite get_outofbound; auto; rewrite default_t_atom; discriminate); generalize (wt_t_atom _ H7); rewrite H4; simpl; case (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) hb); try discriminate; simpl; rewrite andb_true_iff; change (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) x) A = true) with (is_true (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) x) A)); change (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) y) A = true) with (is_true (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) y) A)); rewrite !Typ.eqb_spec; intros [H8 H9]; generalize (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom x), (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom y); rewrite H8, H9; intros [v1 HH1] [v2 HH2]; rewrite HH1, HH2; simpl; rewrite Typ.cast_refl; auto; rewrite Typ.i_eqb_sym; auto.
+      intros f1 f2. rewrite check_distinct_two_args_spec. intros [ha [hb [A [x [y [H1 [H2 [H3 [H4|H4]]]]]]]]];
+      unfold Form.interp_state_var; assert (H5: f1 < length t_form) by (case_eq (f1 < length t_form); auto; intro Heq; generalize H1; rewrite get_outofbound; auto; rewrite default_t_form; discriminate); assert (H6: f2 < length t_form) by (case_eq (f2 < length t_form); auto; intro Heq; generalize H2; rewrite get_outofbound; auto; rewrite default_t_form; discriminate); rewrite !Form.t_interp_wf; auto; rewrite H1, H2; simpl; unfold Atom.interp_form_hatom, Atom.interp_hatom; rewrite !Atom.t_interp_wf; auto; rewrite H3, H4; simpl; unfold Atom.wt,is_true in wt_t_atom; rewrite forallbi_spec in wt_t_atom; assert (H7: hb < length t_atom) by (case_eq (hb < length t_atom); auto; intro Heq; generalize H4; rewrite get_outofbound; auto; rewrite default_t_atom; discriminate); generalize (wt_t_atom _ H7); rewrite H4; simpl; case (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) hb); try discriminate; simpl; rewrite andb_true_iff; change (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) x) A = true) with (is_true (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) x) A)); change (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) y) A = true) with (is_true (Typ.eqb (Atom.get_type' t_i (Atom.t_interp t_i t_func t_atom) y) A)); rewrite !Typ.eqb_spec; intros [H8 H9]; generalize (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom x), (Atom.check_aux_interp_hatom _ t_func _ wf_t_atom y); rewrite H8, H9; intros [v1 HH1] [v2 HH2]; rewrite HH1, HH2; simpl; unfold Atom.apply_nop; simpl; rewrite Typ.cast_refl; auto.
+      rewrite Typ.i_eqb_sym; auto.
     Qed.
 
 
