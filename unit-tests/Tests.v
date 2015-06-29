@@ -1,3 +1,4 @@
+Add LoadPath "../src" as SMTCoq.
 Require Import SMTCoq.
 Require Import Bool PArray Int63 List ZArith.
 
@@ -423,7 +424,7 @@ Proof.
 Abort.
 *)
 
-
+(*
 (* veriT vernacular commands *)
 
 Section Checker_Sat1.
@@ -1274,7 +1275,7 @@ Goal forall (P:Z -> Z -> bool) x y z,
 Proof.
   verit.
 Qed.
-
+*)
 
 (* Decision procedure for arithmetic on machine integers (work in progress) *)
 
@@ -1381,8 +1382,12 @@ Goal 42 == 42.
   int_decide.
 Qed.
 
-(*
+
 Goal forall (x:int), x == x.
   int_decide.
 Qed.
+(*
+Goal 0 lxor max_int == max_int.
+  int_decide.
+  reflexivity.
 *)

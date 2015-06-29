@@ -320,6 +320,7 @@ Module Int_Checker.
   | ImmBuildDef2 (pos:int) (cid:clause_id)
   | ImmBuildProj (pos:int) (cid:clause_id) (i:int)
   | BuildDefInt (pos:int) (l:array _lit)
+  | BuildDefInt2 (pos:int) (l:array _lit)
   | BuildProjInt (pos:int) (l:array _lit) (i:int).
 
   Local Open Scope list_scope.
@@ -339,6 +340,7 @@ Module Int_Checker.
     | ImmBuildDef2 pos cid => S.set_clause s pos (check_ImmBuildDef2 t_form s cid)
     | ImmBuildProj pos cid i => S.set_clause s pos (check_ImmBuildProj t_form s cid i) 
     | BuildDefInt pos l => S.set_clause s pos (check_BuildDefInt t_form t_atom l)
+    | BuildDefInt2 pos l => S.set_clause s pos (check_BuildDefInt2 t_form t_atom l)
     | BuildProjInt pos l i => S.set_clause s pos (check_BuildProjInt t_form t_atom l i)
     end.
 
@@ -349,7 +351,7 @@ Module Int_Checker.
       forall s, S.valid rho s ->
         forall st : step, S.valid rho (step_checker t_atom t_form s st).
   Proof.
-    intros t_i t_func t_atom t_form rho H1 H2 H10 s Hs. destruct (Form.check_form_correct (Atom.interp_form_hatom t_i t_func t_atom) _ H1) as [[Ht1 Ht2] Ht3]. destruct (Atom.check_atom_correct _ H2) as [Ha1 Ha2]. intros [pos res|pos cid lf|pos|pos|pos l|pos l|pos l i|pos cid|pos cid|pos cid i|pos l|pos l i]; simpl; try apply S.valid_set_clause; auto.
+    intros t_i t_func t_atom t_form rho H1 H2 H10 s Hs. destruct (Form.check_form_correct (Atom.interp_form_hatom t_i t_func t_atom) _ H1) as [[Ht1 Ht2] Ht3]. destruct (Atom.check_atom_correct _ H2) as [Ha1 Ha2]. intros [pos res|pos cid lf|pos|pos|pos l|pos l|pos l i|pos cid|pos cid|pos cid i|pos l|pos l|pos l i]; simpl; try apply S.valid_set_clause; auto.
     apply S.valid_set_resolve; auto.
     apply valid_check_flatten; auto; intros h1 h2 H.
       unfold is_true in H. rewrite eqb_spec in H. now subst h2.
@@ -363,6 +365,7 @@ Module Int_Checker.
     apply valid_check_ImmBuildDef2; auto.
     apply valid_check_ImmBuildProj; auto.
     apply valid_check_BuildDefInt; auto.
+    apply valid_check_BuildDefInt2; auto.
     apply valid_check_BuildProjInt; auto.
   Qed.
 

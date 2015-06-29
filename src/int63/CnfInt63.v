@@ -773,6 +773,11 @@ admit. (*
       admit.*)
     Qed.
     
+    Lemma valid_check_BuildDefInt2 : forall lits, C.valid rho (check_BuildDefInt2 lits).
+    Proof.
+      admit.
+    Qed.
+    
   End Proof.
   
 End Checker.

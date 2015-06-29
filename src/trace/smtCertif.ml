@@ -112,6 +112,7 @@ type 'hform rule =
   | BuildDefInt of 'hform array
     (*  * Def of equality : {(a = b) ∨ ¬(a₀ ⇔ b₀) ∨ ... ∨ ¬(a₆₂ ⇔ b₆₂)}
     *)
+  | BuildDefInt2 of 'hform array
   | BuildProjInt of 'hform array * int
     (*  * Projection of equality : {¬(a = b) ∨ (aᵢ ⇔ bᵢ)}
     *)

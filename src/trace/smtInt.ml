@@ -96,7 +96,26 @@ module MakeBB = struct
                   link_Other (BuildProjInt (Array.of_list clProj, i)) clProj;
                 ) bits;
                 bb (Atom x); bb (Atom y)
-             (* In the other cases, we just propagate down to the leaves *)
+             | Auop (UO_index i, hh) ->
+		(match Atom.atom hh with
+		   | Abop (BO_int_xor, x, y) ->
+		      let feq = Form.get rf (Fatom l) in
+               	      let fneq = Form.neg feq in
+		      let bitx = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, x)))) in
+		      let bity = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, x)))) in
+		      let bitxneg = Form.neg bitx in
+		      let bityneg = Form.neg bity in
+		      let clDef1 = [fneq;bitx;bity] in
+		      let clDef2 = [feq;bitxneg;bity] in
+		      let clDef3 = [feq;bitx;bityneg] in
+		      let clDef4 = [fneq;bitxneg;bityneg] in
+	              link_Other (BuildDefInt [|fneq;bitx;bity|]) clDef1;
+	              link_Other (BuildDefInt2 [|feq;bitx;bity|]) clDef2;
+	              link_Other (BuildDefInt [|feq;bitx;bity|]) clDef3;
+	              link_Other (BuildDefInt2 [|fneq;bitx;bity|]) clDef4;
+		      bb (Atom x); bb (Atom y)
+	           | _ -> bb (Atom hh))
+	     (* In the other cases, we just propagate down to the leaves *)
              | Acop _ | Avar _ -> ()
              | Auop (_, x) -> bb (Atom x)
              | Abop (_, x, y) -> bb (Atom x); bb (Atom y))) in
