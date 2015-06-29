@@ -147,4 +147,4 @@ let used_clauses r =
   | True | False | BuildDef _ | BuildDef2 _ | BuildProj _
   | EqTr _ | EqCgr _ | EqCgrP _
   | LiaMicromega _ | LiaDiseq _
-  | BuildDefInt _ | BuildProjInt _ -> []
+  | BuildDefInt _ | BuildDefInt2 _ | BuildProjInt _ -> []

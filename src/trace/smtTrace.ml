@@ -278,7 +278,7 @@ let to_coq to_lit (cstep,
     cImmBuildProj,cImmBuildDef,cImmBuildDef2,  
     cEqTr, cEqCgr, cEqCgrP, 
     cLiaMicromega, cLiaDiseq, cSplArith, cSplDistinctElim,
-    cBuildDefInt, cBuildProjInt) confl =
+    cBuildDefInt, cBuildDefInt2, cBuildProjInt) confl =
   let out_f f = to_lit f in
   let out_c c = mkInt (get_pos c) in
   let step_to_coq c =
@@ -346,6 +346,16 @@ let to_coq to_lit (cstep,
              done;
              let ls' = Structures.mkArray (Lazy.force cint, ls') in
              mklApp cBuildProjInt [|out_c c; ls'; mkInt j|]
+           )
+        | BuildDefInt2 ls ->
+           (
+             let length = Array.length ls in
+             let ls' = Array.make (length + 1) (mkInt 0) in
+             for i = 0 to length - 1 do
+               ls'.(i) <- out_f ls.(i)
+             done;
+             let ls' = Structures.mkArray (Lazy.force cint, ls') in
+             mklApp cBuildDefInt2 [|out_c c; ls'|]
            )
 	end
     | _ -> assert false in

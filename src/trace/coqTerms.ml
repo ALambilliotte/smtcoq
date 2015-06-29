@@ -178,7 +178,7 @@ let make_certif_ops modules =
   gen_constant modules"ImmBuildDef2",
   gen_constant modules "EqTr", gen_constant modules "EqCgr", gen_constant modules "EqCgrP", 
   gen_constant modules "LiaMicromega", gen_constant modules "LiaDiseq", gen_constant modules "SplArith", gen_constant modules "SplDistinctElim",
-  gen_constant modules "BuildDefInt", gen_constant modules "BuildProjInt", gen_constant modules "BuildDefInt2"
+  gen_constant modules "BuildDefInt", gen_constant modules "BuildDefInt2", gen_constant modules "BuildProjInt"
 )
 
 
