@@ -67,6 +67,39 @@ Proof.
 Qed.
 
 
+Fixpoint forallbi_aux (A:Type) (f:nat -> A -> bool) (l:list A) (i:nat) : bool :=
+  match l with
+  | nil => true
+  | a::r => (f i a)&&(forallbi_aux f r (S i))
+  end.
+
+
+Fixpoint forallbi_list (A:Type) (f:nat -> A -> bool) (l:list A) : bool := forallbi_aux f l 0.
+
+Fixpoint length_int (A:Type) (l:list A) : int :=
+  match l with
+  | nil => 0
+  | a::r => 1 + (length_int r)
+  end.
+
+
+(*Lemma forallbi_spec_int : forall (f : int -> int -> bool) l, forallbi_list f l = true <-> forall i, i < length_int l = true -> f i (nth (i%nat) 0 l) = true.
+
+
+
+
+Lemma forallbi_list_forall : forall (A:Type) (f:int -> A -> bool) (l:list A), forallbi_list f l = true <-> (forall x, exists i, In x l -> f i x = true).
+Proof.
+  intros A f.
+  induction l;simpl;intuition.
+  exists 0;intro H1;inversion H1.
+  rewrite andb_true_iff in H1;destruct H1 as (H1,H2).
+  unfold forallbi_aux in H2.
+  inversion H2.
+Qed.
+*)
+
+
 Section Checker.
 
   Import Atom.
@@ -94,6 +127,7 @@ Section Checker.
     | a::nil => a::nil
     | a::b::c => a::(clean c)
     end.
+
 
 (* * and_neg          : {(and a_1 ... a_n) (not a_1) ... (not a_n)}
      * or_pos           : {(not (or a_1 ... a_n)) a_1 ... a_n} 
@@ -136,8 +170,8 @@ Section Checker.
           else C._true
         | _ => C._true
         end
-      | Auop (UO_index i1) hxor =>
-        match get_atom hxor with
+      | Auop (UO_index i1) hh =>
+        match get_atom hh with
         | Abop b h1 h2 =>
           match (b) with
           | (BO_int_xor) =>
@@ -162,12 +196,47 @@ Section Checker.
             else C._true
           | _ => C._true
           end
+        (*| Anop b lh =>
+          match (b) with
+          | (NO_int_and) =>
+            let m := length_int lh in
+            let test_correct i li :=
+              match (get_form (Lit.blit (lits.[i + 1]))) with
+              | Fatom a => 
+                match (get_atom a) with
+                | Auop (UO_index i2) h => (i2 == i1)&&(li==h)&&(negb (Lit.is_pos (lits.[i+1])))
+                | _ => true
+                end
+              | _ => true
+              end
+            in
+            if (n == m+1)&&(Lit.is_pos (lits.[0]))&&(forallbi_list test_correct lh)
+            then PArray.to_list lits
+            else C._true
+          | (NO_int_or) =>
+            let m := length_int lh in
+            let test_correct i li :=
+              match (get_form (Lit.blit (lits.[i + 1]))) with
+              | Fatom a => 
+                match (get_atom a) with
+                | Auop (UO_index i2) h => (i2 == i1)&&(li==h)&&(Lit.is_pos (lits.[i+1]))
+                | _ => true
+                end
+              | _ => true
+              end
+            in
+            if (n == m+1)&&(negb (Lit.is_pos (lits.[0])))&&(forallbi_list test_correct lh)
+            then PArray.to_list lits
+            else C._true
+          | _ => C._true
+          end*)
         | _ => C._true
         end
       | _ => C._true
       end
    | _ => C._true
-   end.
+   end
+   .
    
    (* * xor_pos2          : {(not (xor a b)) (not a) (not b)}
      * xor_neg2          : {(xor a b) (not a) b}
@@ -213,6 +282,11 @@ Section Checker.
    | _ => C._true
    end.
 
+
+(* * or_neg           : {(or a_1 ... a_n) (not a_i)}
+     * and_pos          : {(not (and a_1 ... a_n)) a_i} 
+*)
+
   Definition check_BuildProjInt lits i :=
     let n := PArray.length lits in
     match get_form (Lit.blit (lits.[0])) with
@@ -240,11 +314,48 @@ Section Checker.
           else C._true
         | _ => C._true
         end
+      (*| Auop (UO_index i1) hh =>
+        match get_atom hh with
+        | Anop b lh =>
+          match (b) with
+          | (NO_int_and) =>
+            let m := length_int lh in
+            let test_correct i li :=
+              match (get_form (Lit.blit (lits.[i + 1]))) with
+              | Fatom a => 
+                match (get_atom a) with
+                | Auop (UO_index i2) h => (i2 == i1)&&(li==h)&&(Lit.is_pos (lits.[i+1]))
+                | _ => true
+                end
+              | _ => true
+              end
+            in
+            if (n == m+1)&&(negb (Lit.is_pos (lits.[0])))&&(forallbi_list test_correct lh)
+            then lits.[i+1]::lits.[0]::nil
+            else C._true
+          | (NO_int_or) =>
+            let m := length_int lh in
+            let test_correct i li :=
+              match (get_form (Lit.blit (lits.[i + 1]))) with
+              | Fatom a => 
+                match (get_atom a) with
+                | Auop (UO_index i2) h => (i2 == i1)&&(li==h)&&(negb(Lit.is_pos (lits.[i+1])))
+                | _ => true
+                end
+              | _ => true
+              end
+            in
+            if (n == m+1)&&(Lit.is_pos (lits.[0]))&&(forallbi_list test_correct lh)
+            then lits.[i+1]::lits.[0]::nil
+            else C._true
+          | _ => C._true
+          end
+        | _ => C._true
+        end*)
       | _ => C._true
       end
     | _ => C._true
-    end
-  .
+    end.
 
   Section Proof.
     
@@ -323,7 +434,18 @@ Section Checker.
       unfold check_BuildProjInt,C.valid. intros lits i.
       
       case_eq (t_form.[Lit.blit (lits.[0])]);[intros a H|intro H|intro H|intros z1 z2 H|intros z1 H|intros z1 H|intros z1 H|intros z1 z2 H|intros z1 z2 H|intros z1 z2 z3 H]; auto using C.interp_true.
-      case_eq (t_atom.[a]);[intros z1 H1|intros z1 z2 H1|intros b h1 h2 H1|intros z1 z2 H1|intros z1 z2 H1]; auto using C.interp_true.
+      case_eq (t_atom.[a]);[intros z1 H1|intros u hh H1|intros b h1 h2 H1|intros z1 z2 H1|intros z1 z2 H1]; auto using C.interp_true.
+      (*case_eq u;intro i1;auto using C.interp_true;intro H2.
+      case_eq (t_atom .[ hh]);[intros z1 H3|intros z1 z2 H3|intros z1 z2 z3 H3|intros no lh H3|intros z1 z2 H3];auto using C.interp_true.
+      case_eq no;intro H4;auto using C.interp_true.
+      case_eq ((length lits == length_int lh + 1) && Lit.is_pos (lits .[ 0]) && forallbi_list (fun i0 li : int => match t_form .[ Lit.blit (lits .[ i0 + 1])] with | Fatom a0 => match t_atom .[ a0] with | Auop (UO_index i2) h => (i2 == i1) && (li == h) && negb (Lit.is_pos (lits .[ i0 + 1])) | _ => true end | _ => true end) lh);intro H5.
+      apply andb_true_iff in H5;destruct H5 as (H5,H6);apply andb_true_iff in H5;destruct H5 as (H5,H7).
+admit. admit. admit.
+
+
+
+*)
+
       case_eq b; intro t; auto using C.interp_true;intro H3.
       case_eq t;intro H4;auto using C.interp_true;subst t.
       case_eq (t_form.[Lit.blit (lits.[i+1])]);[intros z1 H4|intros H4|intros H4|intros z1 z2 H4|intros z1 H4|intros z1 H4|intros z1 H4|intros z1 z2 H4|intros l1 l2 H4|intros z1 z2 z3 H4];auto using C.interp_true.
@@ -462,6 +584,7 @@ Section Checker.
 
       admit.
       admit.
+admit. (*
 
 
       case_eq (c);[intros|intros|intros|intros|intros|intros|intros|intros|intros|intros|intros t H1]; auto using C.interp_true.
@@ -647,7 +770,7 @@ Section Checker.
       simpl;rewrite H34;rewrite H35;simpl;unfold bit_rev;rewrite lxor_spec;destruct (bit (k (Typ.interp t_i) v1) i1);destruct (bit (k0 (Typ.interp t_i) v2) i1);[left|right;right|right;left|left];trivial.
 
       admit.
-      admit.
+      admit.*)
     Qed.
     
   End Proof.
