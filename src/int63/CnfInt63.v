@@ -172,6 +172,14 @@ Section Checker.
         end
       | Auop (UO_index i1) hh =>
         match get_atom hh with
+        | Acop (CO_int i) => 
+          if Lit.is_pos (lits.[0])
+          then (
+            if (bit_rev i1 i)
+            then (lits.[0])::nil
+            else (Lit.neg (lits.[0]))::nil
+               )
+          else C._true
         | Abop b h1 h2 =>
           match (b) with
           | (BO_int_xor) =>
@@ -196,15 +204,15 @@ Section Checker.
             else C._true
           | _ => C._true
           end
-        (*| Anop b lh =>
+        | Anop b lh =>
           match (b) with
           | (NO_int_and) =>
             let m := length_int lh in
             let test_correct i li :=
-              match (get_form (Lit.blit (lits.[i + 1]))) with
+              match (get_form (Lit.blit (lits.[Int63Op.of_Z (Z_of_nat (S i))]))) with
               | Fatom a => 
                 match (get_atom a) with
-                | Auop (UO_index i2) h => (i2 == i1)&&(li==h)&&(negb (Lit.is_pos (lits.[i+1])))
+                | Auop (UO_index i2) h => (i2 == i1)&&(li==h)&&(negb (Lit.is_pos (lits.[Int63Op.of_Z (Z_of_nat (S i))])))
                 | _ => true
                 end
               | _ => true
@@ -216,10 +224,10 @@ Section Checker.
           | (NO_int_or) =>
             let m := length_int lh in
             let test_correct i li :=
-              match (get_form (Lit.blit (lits.[i + 1]))) with
+              match (get_form (Lit.blit (lits.[Int63Op.of_Z (Z_of_nat (S i))]))) with
               | Fatom a => 
                 match (get_atom a) with
-                | Auop (UO_index i2) h => (i2 == i1)&&(li==h)&&(Lit.is_pos (lits.[i+1]))
+                | Auop (UO_index i2) h => (i2 == i1)&&(li==h)&&(Lit.is_pos (lits.[Int63Op.of_Z (Z_of_nat (S i))]))
                 | _ => true
                 end
               | _ => true
@@ -229,7 +237,7 @@ Section Checker.
             then PArray.to_list lits
             else C._true
           | _ => C._true
-          end*)
+          end
         | _ => C._true
         end
       | _ => C._true
@@ -314,7 +322,7 @@ Section Checker.
           else C._true
         | _ => C._true
         end
-      (*| Auop (UO_index i1) hh =>
+      | Auop (UO_index i1) hh =>
         match get_atom hh with
         | Anop b lh =>
           match (b) with
@@ -351,7 +359,7 @@ Section Checker.
           | _ => C._true
           end
         | _ => C._true
-        end*)
+        end
       | _ => C._true
       end
     | _ => C._true
@@ -444,7 +452,7 @@ admit. admit. admit.
 
 
 
-*)
+*) 
 
       case_eq b; intro t; auto using C.interp_true;intro H3.
       case_eq t;intro H4;auto using C.interp_true;subst t.
@@ -540,9 +548,11 @@ admit. admit. admit.
       unfold check_BuildDefInt,C.valid; intros lits.
       
       case_eq (t_form .[ Lit.blit (lits .[ 0])]); [intros a H|intro H|intro H|intros z1 z2 H|intros z1 H|intros z1 H|intros z1 H|intros z1 z2 H|intros z1 z2 H|intros z1 z2 z3 H]; auto using C.interp_true.
-      case_eq (t_atom.[a]);[intros z1 H0|intros c hxor H0|intros c h1 h2 H0|intros z1 z2 H0|intros z1 z2 H0]; auto using C.interp_true.
-      case_eq c;intro i1;auto using C.interp_true;intro H1.
-      case_eq (t_atom.[hxor]);[intros z1 H2|intros z1 z2 H2|intros b h1 h2 H2|intros z1 z2 H2|intros z1 z2 H2];auto using C.interp_true.
+      case_eq (t_atom.[a]);[intros z1 H0|intros c hxor H0|intros c h1 h2 H0|intros z1 z2 H0|intros z1 z2 H0]; auto using C.interp_true. admit.
+
+
+
+(*      case_eq (t_atom.[hxor]);[intros z1 H2|intros z1 z2 H2|intros b h1 h2 H2|intros z1 z2 H2|intros z1 z2 H2];auto using C.interp_true.
       case_eq b; intro H3;auto using C.interp_true.
       case_eq (length lits == 3); intros H4; auto using C.interp_true. 
       case_eq (t_form .[ Lit.blit (lits .[ 1])]);[intros a1 H5|intros|intros|intros|intros|intros|intros|intros|intros|intros]; auto using C.interp_true.
@@ -770,7 +780,8 @@ admit. (*
       simpl;rewrite H34;rewrite H35;simpl;unfold bit_rev;rewrite lxor_spec;destruct (bit (k (Typ.interp t_i) v1) i1);destruct (bit (k0 (Typ.interp t_i) v2) i1);[left|right;right|right;left|left];trivial.
 
       admit.
-      admit.*)
+      admit.*)*)
+      admit.
     Qed.
     
     Lemma valid_check_BuildDefInt2 : forall lits, C.valid rho (check_BuildDefInt2 lits).

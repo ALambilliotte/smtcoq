@@ -72,6 +72,11 @@ module MakeBB = struct
         mkBits (f::acc) (i-1) in
     mkBits [] 62
 
+  let bit_int i a =
+    if (a lsr i) land 1 = 1
+    then true
+    else false
+
   let bb rf ra af =
     let rec bb af =
       (match af with
@@ -96,25 +101,34 @@ module MakeBB = struct
                   link_Other (BuildProjInt (Array.of_list clProj, i)) clProj;
                 ) bits;
                 bb (Atom x); bb (Atom y)
-             | Auop (UO_index i, hh) ->
-		(match Atom.atom hh with
-		   | Abop (BO_int_xor, x, y) ->
-		      let feq = Form.get rf (Fatom l) in
-               	      let fneq = Form.neg feq in
-		      let bitx = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, x)))) in
-		      let bity = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, x)))) in
-		      let bitxneg = Form.neg bitx in
-		      let bityneg = Form.neg bity in
-		      let clDef1 = [fneq;bitx;bity] in
-		      let clDef2 = [feq;bitxneg;bity] in
-		      let clDef3 = [feq;bitx;bityneg] in
-		      let clDef4 = [fneq;bitxneg;bityneg] in
-	              link_Other (BuildDefInt [|fneq;bitx;bity|]) clDef1;
-	              link_Other (BuildDefInt2 [|feq;bitx;bity|]) clDef2;
-	              link_Other (BuildDefInt [|feq;bitx;bity|]) clDef3;
-	              link_Other (BuildDefInt2 [|fneq;bitx;bity|]) clDef4;
-		      bb (Atom x); bb (Atom y)
-	           | _ -> bb (Atom hh))
+	     | Abop (BO_int_xor, x, y) ->
+		for i = 0 to 62
+		do
+		  let bitl = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, l)))) in
+               	  let bitlneg = Form.neg bitl in
+		  let bitx = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, x)))) in
+		  let bity = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, y)))) in
+		  let bitxneg = Form.neg bitx in
+		  let bityneg = Form.neg bity in
+		  let clDef1 = [bitlneg;bitx;bity] in
+		  let clDef2 = [bitl;bitx;bityneg] in
+	          let clDef3 = [bitl;bitxneg;bity] in
+       	          let clDef4 = [bitlneg;bitxneg;bityneg] in
+	          link_Other (BuildDefInt [|bitlneg;bitx;bity|]) clDef1;
+                  link_Other (BuildDefInt [|bitl;bitx;bity|]) clDef2;
+                  link_Other (BuildDefInt2 [|bitl;bitx;bity|]) clDef3;
+                  link_Other (BuildDefInt2 [|bitlneg;bitx;bity|]) clDef4;
+		done;
+        	bb (Atom x); bb (Atom y)
+	     | Acop (CO_int j) -> 
+	 	for i = 0 to 62
+		do
+                  let feq = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, l)))) in
+                  let fneq = Form.neg feq in
+                  if bit_int i (Uint63.to_int j)
+		  then link_Other (BuildDefInt [|feq|]) [feq]
+		  else link_Other (BuildDefInt [|feq|]) [fneq]
+		done;
 	     (* In the other cases, we just propagate down to the leaves *)
              | Acop _ | Avar _ -> ()
              | Auop (_, x) -> bb (Atom x)

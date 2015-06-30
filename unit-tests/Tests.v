@@ -1386,8 +1386,21 @@ Qed.
 Goal forall (x:int), x == x.
   int_decide.
 Qed.
-(*
-Goal 0 lxor max_int == max_int.
+
+Goal forall a b,a lxor b == b lxor a.
   int_decide.
-  reflexivity.
+Qed.
+
+Goal forall a b c, (a lxor b) lxor c == a lxor (b lxor c).
+  int_decide.
+Qed.
+
+Goal 0 lxor 0 == 0.
+  int_decide.
+Qed.
+
+Goal forall a, (a lxor 0 == a) && (0 lxor a == a).
+  int_decide.
+Qed.
+
 *)
