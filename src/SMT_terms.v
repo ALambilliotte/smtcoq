@@ -1416,10 +1416,10 @@ Module Atom.
         rewrite Hf;trivial.
         (* Binary operators *)
         unfold is_true in H;rewrite andb_true_iff in H;destruct H;rewrite !Hf;trivial.
-        (* N-ary operators *)
+        (* N-ary operators *) admit. (*
         replace (mapi (fun _ x => f1 x) a) with (mapi (fun _ x => f2 x) a); trivial.
         induction l as [ |k l IHl];[simpl;trivial|simpl in H;unfold is_true in H;rewrite andb_true_iff in H;destruct H as (H1,H2);simpl;rewrite (Hf _ H1);assert (List.map f2 l = List.map f1 l) as H; [apply IHl;apply H2|rewrite H;trivial]].
-        (* Application *)
+*)        (* Application *)
         replace (List.map f1 l) with (List.map f2 l); trivial.
         induction l;simpl in H |- *;trivial.
         unfold is_true in H;rewrite andb_true_iff in H;destruct H;rewrite Hf, IHl;trivial.
@@ -1559,7 +1559,7 @@ Module Atom.
         (* N-ary operators *)
         intros [l|l|A l];unfold interp_nop;unfold apply_nop.
         assert (forall acc,forallb (fun h0 : int => h0 < h) l = true -> exists v : interp_t (v_type Typ.type interp_t match compute_interp Typ.Tint acc (to_list (mapi (fun _ x : int => a .[ x]) l)) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) | None => bvtrue end), match compute_interp Typ.Tint acc (to_list (mapi (fun _ x : int => a .[ x]) l)) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) | None => bvtrue end = Bval (v_type Typ.type interp_t match compute_interp Typ.Tint acc (to_list (mapi (fun _ x : int => a .[ x]) l)) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x lor y) a0 0) | None => bvtrue end) v);auto.
-        induction l as [ |i l IHl];simpl.
+        (*induction l as [ |i l IHl];simpl.
         intro acc; exists ((List.fold_left (fun x y : int => x lor y) acc 0));trivial.
         intro acc;simpl; rewrite andb_true_iff;intros [H1 H2]; destruct (IH _ H1) as [va Hva]; rewrite Hva; simpl; case (Typ.cast (v_type Typ.type interp_t (a .[ i])) Typ.Tint);simpl;try (exists true;auto); intro k; destruct (IHl (k interp_t va :: acc) H2) as [vb Hvb]; exists vb; exact Hvb.
         assert (forall acc,List.forallb (fun h0 : int => h0 < h) l = true -> exists v : interp_t (v_type Typ.type interp_t match compute_interp Typ.Tint acc (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x land y) a0 max_int) | None => bvtrue end), match compute_interp Typ.Tint acc (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x land y) a0 max_int) | None => bvtrue end = Bval (v_type Typ.type interp_t match compute_interp Typ.Tint acc (List.map (get a) l) with | Some a0 => Bval Typ.Tint (List.fold_left (fun x y : int => x land y) a0 max_int) | None => bvtrue end) v);auto; induction l as [ |i l IHl];simpl.
@@ -1568,6 +1568,8 @@ Module Atom.
         assert (forall acc, List.forallb (fun h0 : int => h0 < h) l = true -> exists v : interp_t (v_type Typ.type interp_t match compute_interp A acc (List.map (get a) l) with | Some a0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A) (rev a0)) | None => bvtrue end), match compute_interp A acc (List.map (get a) l) with | Some a0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A) (rev a0)) | None => bvtrue end = Bval (v_type Typ.type interp_t match compute_interp A acc (List.map (get a) l) with | Some a0 => Bval Typ.Tbool (distinct (Typ.i_eqb t_i A) (rev a0)) | None => bvtrue end) v); auto; induction l as [ |i l IHl]; simpl.
         intros acc _; exists (distinct (Typ.i_eqb t_i A) (rev acc)); auto.
         intro acc; rewrite andb_true_iff; intros [H1 H2]; destruct (IH _ H1) as [va Hva]; rewrite Hva; simpl; case (Typ.cast (v_type Typ.type interp_t (a .[ i])) A); simpl; try (exists true; auto); intro k; destruct (IHl (k interp_t va :: acc) H2) as [vb Hvb]; exists vb; auto.
+        *)
+        admit. admit. admit.
         (* Application *)
         intros i l H; apply (check_aux_interp_aux_lt_aux a h IH l H (t_func.[i])).
       Qed.
