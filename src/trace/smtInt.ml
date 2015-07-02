@@ -120,6 +120,40 @@ module MakeBB = struct
                   link_Other (BuildDefInt2 [|bitlneg;bitx;bity|]) clDef4;
 		done;
         	bb (Atom x); bb (Atom y)
+	     | Abop (BO_int_and, x, y) ->
+		for i = 0 to 62
+		do
+		  let bitl = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, l)))) in
+               	  let bitlneg = Form.neg bitl in
+		  let bitx = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, x)))) in
+		  let bity = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, y)))) in
+		  let bitxneg = Form.neg bitx in
+		  let bityneg = Form.neg bity in
+		  let clDef1 = [bitl;bitxneg;bityneg] in
+		  let clDef2 = [bitlneg;bitx] in
+	          let clDef3 = [bitlneg;bity] in
+	          link_Other (BuildDefInt [|bitl;bitxneg;bityneg|]) clDef1;
+                  link_Other (BuildProjInt ([|bitlneg;bitx;bity|],0)) clDef2;
+                  link_Other (BuildProjInt ([|bitlneg;bitx;bity|],1)) clDef3;
+		done;
+        	bb (Atom x); bb (Atom y)
+	     | Abop (BO_int_or, x, y) ->
+		for i = 0 to 62
+		do
+		  let bitl = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, l)))) in
+               	  let bitlneg = Form.neg bitl in
+		  let bitx = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, x)))) in
+		  let bity = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, y)))) in
+		  let bitxneg = Form.neg bitx in
+		  let bityneg = Form.neg bity in
+		  let clDef1 = [bitlneg;bitx;bity] in
+		  let clDef2 = [bitl;bitxneg] in
+	          let clDef3 = [bitl;bityneg] in
+	          link_Other (BuildDefInt [|bitlneg;bitx;bity|]) clDef1;
+                  link_Other (BuildProjInt ([|bitl;bitxneg;bityneg|],0)) clDef2;
+                  link_Other (BuildProjInt ([|bitl;bitxneg;bityneg|],1)) clDef3;
+		done;
+        	bb (Atom x); bb (Atom y)
 	     | Acop (CO_int j) -> 
 	 	for i = 0 to 62
 		do

@@ -6,7 +6,6 @@ Local Open Scope int63_scope.
 
 
 (* zChaff vernacular commands *)
-
 Time Zchaff_Checker "sat1.cnf" "sat1.zlog".
 Time Zchaff_Checker "sat2.cnf" "sat2.zlog".
 Time Zchaff_Checker "sat3.cnf" "sat3.zlog".
@@ -1400,6 +1399,10 @@ Goal 0 lxor 0 == 0.
 Qed.
 
 Goal forall a, (a lxor 0 == a) && (0 lxor a == a).
+  int_decide.
+Qed.
+
+Goal forall a, (a land 0 == 0) && (0 land a == 0).
   int_decide.
 Qed.
 

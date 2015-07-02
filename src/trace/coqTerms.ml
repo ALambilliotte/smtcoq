@@ -21,6 +21,8 @@ let gen_constant modules constant = lazy (gen_constant_in_modules "SMT" modules 
 let cint = Structures.cint
 let ceq63 = gen_constant Structures.int63_modules "eqb"
 let clxor = gen_constant Structures.int63_modules "lxor"
+let cland = gen_constant Structures.int63_modules "land"
+let clor = gen_constant Structures.int63_modules "lor"
 let cbit = gen_constant Structures.int63_modules "bit"
 
 (* PArray *)
@@ -143,6 +145,8 @@ let cBO_Zle = gen_constant smt_modules "BO_Zle"
 let cBO_Zge = gen_constant smt_modules "BO_Zge"
 let cBO_Zgt = gen_constant smt_modules "BO_Zgt"
 let cBO_int_xor = gen_constant smt_modules "BO_int_xor"
+let cBO_int_or = gen_constant smt_modules "BO_int_or"
+let cBO_int_and = gen_constant smt_modules "BO_int_and"
 let cBO_eq = gen_constant smt_modules "BO_eq"
 
 let cNO_distinct = gen_constant smt_modules "NO_distinct"

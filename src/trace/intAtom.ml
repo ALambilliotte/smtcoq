@@ -56,6 +56,8 @@ type uop =
 
 type bop =
    | BO_int_xor
+   | BO_int_and
+   | BO_int_or
    | BO_eq of btype
 
 type op_def = {
@@ -107,15 +109,21 @@ module Op =
 
     let b_to_coq = function
       | BO_int_xor -> Lazy.force cBO_int_xor
+      | BO_int_or -> Lazy.force cBO_int_or
+      | BO_int_and -> Lazy.force cBO_int_and
       | BO_eq t -> eq_to_coq t
 
     let b_type_of = function
       | BO_eq _ -> Tbool
       | BO_int_xor -> Tint
+      | BO_int_or -> Tint
+      | BO_int_and -> Tint
 
     let b_type_args = function
       | BO_eq t -> (t,t)
       | BO_int_xor -> (Tint, Tint)
+      | BO_int_and -> (Tint, Tint)
+      | BO_int_or -> (Tint, Tint)
 
     let interp_eq = function
       | Tbool -> Lazy.force ceqb
@@ -123,6 +131,8 @@ module Op =
 
     let interp_bop = function
       | BO_int_xor -> Lazy.force clxor
+      | BO_int_or -> Lazy.force clor
+      | BO_int_and -> Lazy.force cland
       | BO_eq t -> interp_eq t
 
     let i_to_coq i = mkInt i.index
@@ -281,6 +291,8 @@ module Atom =
     type coq_cst =
       | CCbit
       | CClxor
+      | CCland
+      | CClor
       | CCeqb
       | CCeq63
       | CCunknown
@@ -291,6 +303,8 @@ module Atom =
       List.iter add
 	[ cbit, CCbit;
           clxor, CClxor;
+          cland, CCland;
+          clor, CClor;
           ceqb,CCeqb;
           ceq63,CCeq63
         ];
@@ -314,6 +328,8 @@ module Atom =
                | [x;i] -> mk_uop (UO_index (mk_int i)) [x]
                | _ -> assert false)
           | CClxor -> mk_bop BO_int_xor args
+          | CCland -> mk_bop BO_int_and args
+          | CClor -> mk_bop BO_int_or args
           | CCeqb -> mk_bop (BO_eq Tbool) args
           | CCeq63 -> mk_bop (BO_eq Tint) args
 	  | CCunknown -> mk_unknown h (Retyping.get_type_of env sigma h)

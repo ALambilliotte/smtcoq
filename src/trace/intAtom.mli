@@ -46,6 +46,8 @@ type uop =
 
 type bop =
    | BO_int_xor
+   | BO_int_and
+   | BO_int_or
    | BO_eq of btype
 
 type indexed_op
