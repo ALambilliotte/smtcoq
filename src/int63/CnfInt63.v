@@ -308,7 +308,7 @@ Section Checker.
         | Abop b h1 h2 =>
           match (b) with
           | (BO_int_or) =>
-            if (n == 3)&&(i < 1)
+            if (n == 3)&&(i < 2)
             then (
               match get_form (Lit.blit (lits.[i+1])) with
               | Fatom a0 =>
@@ -328,7 +328,7 @@ Section Checker.
                  )
             else C._true
           | (BO_int_and) =>
-            if (n == 3)&&(i < 1)
+            if (n == 3)&&(i < 2)
             then (
               match get_form (Lit.blit (lits.[i+1])) with
               | Fatom a0 =>
@@ -436,7 +436,7 @@ Section Checker.
       case_eq u;intro i1;auto using C.interp_true;intro H2.
       case_eq (t_atom .[ hh]);[intros z1 H3|intros z1 z2 H3|intros b h1 h2 H3|intros no ah H3|intros z1 z2 H3];auto using C.interp_true.
       case_eq b;intro H5;auto using C.interp_true.
-      case_eq ((length lits == 3) && (i < 1));intro H6;auto using C.interp_true; rewrite andb_true_iff in H6;destruct H6 as (H6,H7).
+      case_eq ((length lits == 3) && (i < 2));intro H6;auto using C.interp_true; rewrite andb_true_iff in H6;destruct H6 as (H6,H7).
       case_eq (t_form.[Lit.blit (lits.[i+1])]);[intros a0 H8|intro H8|intro H8|intros z1 z2 H8|intros z1 H8|intros z1 H8|intros z1 H8|intros z1 z2 H8|intros z1 z2 H8|intros z1 z2 z3 H8]; auto using C.interp_true.
       case_eq (t_atom.[a0]);[intros z1 H9|intros u0 h0 H9|intros z1 z2 z3 H9|intros z1 z2 H9|intros z1 z2 H9]; auto using C.interp_true.
       case_eq u0;intro i2;auto using C.interp_true;intro H10.
@@ -452,7 +452,7 @@ Section Checker.
       simpl; unfold bit_rev;simpl; rewrite lor_spec; rewrite negb_true_iff;
       rewrite orb_true_iff;
       [case_eq (bit (k1 (Typ.interp t_i) v1) i1);intro H00; [left;left;trivial|right;trivial]|case_eq (bit (k2 (Typ.interp t_i) v2) i1);intro H00; [left;right;trivial|right;trivial]].
-      case_eq ((length lits == 3) && (i < 1));intro H6;auto using C.interp_true; rewrite andb_true_iff in H6;destruct H6 as (H6,H7).
+      case_eq ((length lits == 3) && (i < 2));intro H6;auto using C.interp_true; rewrite andb_true_iff in H6;destruct H6 as (H6,H7).
       case_eq (t_form.[Lit.blit (lits.[i+1])]);[intros a0 H8|intro H8|intro H8|intros z1 z2 H8|intros z1 H8|intros z1 H8|intros z1 H8|intros z1 z2 H8|intros z1 z2 H8|intros z1 z2 z3 H8]; auto using C.interp_true.
       case_eq (t_atom.[a0]);[intros z1 H9|intros u0 h0 H9|intros z1 z2 z3 H9|intros z1 z2 H9|intros z1 z2 H9]; auto using C.interp_true.
       case_eq u0;intro i2;auto using C.interp_true;intro H10.
