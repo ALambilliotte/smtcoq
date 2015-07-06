@@ -1406,4 +1406,56 @@ Goal forall a, (a land 0 == 0) && (0 land a == 0).
   int_decide.
 Qed.
 
-*)
+Goal forall a b c, (a land b) land c == (a land b) land (b land c).
+  int_decide.
+Qed.
+
+Goal forall a b c, (a lor b) lor c == (a lor b) lor (b lor c).
+  int_decide.
+Qed.
+
+Goal forall a b c, (a lor b) land c == (a land c) lor (b land c).
+  int_decide.
+Qed.
+
+Goal 0 lxor max_int == max_int.
+ int_decide.
+Qed.
+
+Goal forall (a:bool), andb (xorb a  true) a = false.
+  int_decide.
+Qed.
+
+Goal forall a b,(a land b) lor (a lxor b)  == a lor b.
+  int_decide.
+Qed.
+
+Goal forall a, a lor 0 == a.
+  int_decide.
+Qed.
+
+Goal forall a b c, (a lxor b) lxor c == (a lxor c) lxor (b).
+  int_decide.
+Qed.
+
+Goal forall a, a lxor a == 0.
+  int_decide.
+Qed.
+
+Goal 0 lor max_int == max_int.
+  int_decide.
+Qed.
+
+
+Goal forall a b, (a lxor max_int) lxor (b lxor max_int) == a lxor b.
+  int_decide.
+Qed.
+
+Goal forall a, a lor max_int == max_int.
+  int_decide.
+Qed.
+
+
+Goal forall a b, a lor b lxor max_int == a lxor max_int land (b lxor max_int).
+  int_decide.
+
