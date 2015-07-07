@@ -27,6 +27,7 @@ let gen_constant modules constant = lazy (gen_constant_in_modules "SMT" modules 
 let int63_modules = [["Coq";"Numbers";"Cyclic";"Int63";"Int63Native"];["Coq";"Numbers";"Cyclic";"Int63";"Int63Op"]]
 
 type int63 = Uint63.t
+let maxuint63 : int63 = Uint63.of_string "0x7FFFFFFFFFFFFFFF"
 let mkInt : int -> Term.constr =
   fun i -> Term.mkInt (Uint63.of_int i)
 let mkInt63 : int63 -> Term.constr = Term.mkInt

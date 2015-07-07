@@ -289,6 +289,7 @@ module Atom =
 
     (** Given a coq term, build the corresponding atom *)
     type coq_cst =
+      | CCmax_int
       | CCbit
       | CClxor
       | CCland
@@ -301,7 +302,8 @@ module Atom =
       let tbl = Hashtbl.create 3 in
       let add (c1,c2) = Hashtbl.add tbl (Lazy.force c1) c2 in
       List.iter add
-	[ cbit, CCbit;
+	[ cmax_int, CCmax_int;
+          cbit, CCbit;
           clxor, CClxor;
           cland, CCland;
           clor, CClor;
@@ -323,6 +325,7 @@ module Atom =
         if Structures.isInt h then mk_cop (CO_int (mk_int63 h)) else
 	let c, args = Term.decompose_app h in
 	match get_cst c with
+          | CCmax_int -> mk_cop (CO_int Structures.maxuint63)
           | CCbit ->
              (match args with
                | [x;i] -> mk_uop (UO_index (mk_int i)) [x]

@@ -1458,4 +1458,4 @@ Qed.
 
 Goal forall a b, a lor b lxor max_int == a lxor max_int land (b lxor max_int).
   int_decide.
-
+Qed.

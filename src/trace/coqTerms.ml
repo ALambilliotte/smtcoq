@@ -24,6 +24,7 @@ let clxor = gen_constant Structures.int63_modules "lxor"
 let cland = gen_constant Structures.int63_modules "land"
 let clor = gen_constant Structures.int63_modules "lor"
 let cbit = gen_constant Structures.int63_modules "bit"
+let cmax_int = gen_constant Structures.int63_modules "max_int"
 
 (* PArray *)
 let carray = gen_constant Structures.parray_modules "array"
