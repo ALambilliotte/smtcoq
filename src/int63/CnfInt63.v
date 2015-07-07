@@ -362,8 +362,7 @@ Section Checker.
               (t_func : array (Atom.tval t_i))
               (ch_atom : Atom.check_atom t_atom)
               (ch_form : Form.check_form t_form)
-              .
-              (* (wt_t_atom : Atom.wt t_i t_func t_atom). *)
+              (wt_t_atom : Atom.wt t_i t_func t_atom).
 
     Local Notation check_atom :=
       (check_aux t_i t_func (get_type t_i t_func t_atom)).
@@ -430,12 +429,22 @@ Section Checker.
 
     Lemma valid_check_BuildProjInt : forall lits i, C.valid rho (check_BuildProjInt lits i).
     Proof.
+      unfold wt, is_true in wt_t_atom. rewrite forallbi_spec in wt_t_atom.
+
       unfold check_BuildProjInt,C.valid. intros lits i.
       case_eq (t_form.[Lit.blit (lits.[0])]);[intros a H|intro H|intro H|intros z1 z2 H|intros z1 H|intros z1 H|intros z1 H|intros z1 z2 H|intros z1 z2 H|intros z1 z2 z3 H]; auto using C.interp_true.
       case_eq (t_atom.[a]);[intros z1 H1|intros u hh H1|intros b h1 h2 H1|intros z1 z2 H1|intros z1 z2 H1]; auto using C.interp_true.
       case_eq u;intro i1;auto using C.interp_true;intro H2.
       case_eq (t_atom .[ hh]);[intros z1 H3|intros z1 z2 H3|intros b h1 h2 H3|intros no ah H3|intros z1 z2 H3];auto using C.interp_true.
       case_eq b;intro H5;auto using C.interp_true.
+
+      (* Using the information that atoms are well-typed *)
+      assert (H100: hh < length t_atom) by (apply PArray.get_not_default_lt; rewrite H3, def_t_atom; discriminate).
+      generalize (wt_t_atom _ H100). rewrite H3, H5. simpl.
+      rewrite !andb_true_iff. intros [[_ H101] H102]. change (is_true (Typ.eqb (get_type' t_i t_interp h1) Typ.Tint)) in H101. change (is_true (Typ.eqb (get_type' t_i t_interp h2) Typ.Tint)) in H102. rewrite Typ.eqb_spec in H101. rewrite Typ.eqb_spec in H102.
+      unfold get_type' in H101. rewrite t_interp_wf in H101; auto.
+      unfold get_type' in H102. rewrite t_interp_wf in H102; auto.
+
       case_eq ((length lits == 3) && (i < 2));intro H6;auto using C.interp_true; rewrite andb_true_iff in H6;destruct H6 as (H6,H7).
       case_eq (t_form.[Lit.blit (lits.[i+1])]);[intros a0 H8|intro H8|intro H8|intros z1 z2 H8|intros z1 H8|intros z1 H8|intros z1 H8|intros z1 z2 H8|intros z1 z2 H8|intros z1 z2 z3 H8]; auto using C.interp_true.
       case_eq (t_atom.[a0]);[intros z1 H9|intros u0 h0 H9|intros z1 z2 z3 H9|intros z1 z2 H9|intros z1 z2 H9]; auto using C.interp_true.
@@ -445,13 +454,19 @@ Section Checker.
       rewrite orb_true_iff in H11;destruct H11;
       rewrite Int63Properties.eqb_spec in H0;rewrite Int63Properties.eqb_spec in H13;subst i2;subst h0;rewrite <- H2 in H10;subst u0;rewrite negb_true_iff in H12;
       unfold C.interp;simpl;rewrite orb_true_iff;rewrite orb_false_r;simpl; unfold Lit.interp;rewrite H12;rewrite H14; unfold Var.interp; rewrite !rho_interp; rewrite H;rewrite H8; simpl; unfold Atom.interp_form_hatom;unfold interp_hatom; rewrite !t_interp_wf;try (apply wf_t_atom);try (apply def_t_atom); rewrite H1;rewrite H9; simpl; rewrite !t_interp_wf;try (apply wf_t_atom);try (apply def_t_atom); simpl; rewrite H3; simpl; unfold interp_uop;unfold interp_bop; rewrite H2;rewrite H5; simpl; rewrite !t_interp_wf;try (apply wf_t_atom);try (apply def_t_atom);simpl; unfold apply_unop;unfold apply_binop;
+
       case_eq (interp_atom (t_atom.[h1])); intros t1 v1 H15;
+      (* Using the information that atoms are well-typed *)
+      rewrite H15 in H101; simpl in H101; subst t1;
       case_eq (interp_atom (t_atom.[h2])); intros t2 v2 H16;
-      case_eq (Typ.cast t1 Typ.Tint); [intros k1 H17|admit|intros k1 H17|admit]; 
-      case_eq (Typ.cast t2 Typ.Tint); [intros k2 H18|admit|intros k2 H18|admit];
+      rewrite H16 in H102; simpl in H102; subst t2;
+      rewrite Typ.cast_refl;
+      (* case_eq (Typ.cast t1 Typ.Tint); [intros k1 H17|admit|intros k1 H17|admit];  *)
+      (* case_eq (Typ.cast t2 Typ.Tint); [intros k2 H18|admit|intros k2 H18|admit]; *)
+
       simpl; unfold bit_rev;simpl; rewrite lor_spec; rewrite negb_true_iff;
       rewrite orb_true_iff;
-      [case_eq (bit (k1 (Typ.interp t_i) v1) i1);intro H00; [left;left;trivial|right;trivial]|case_eq (bit (k2 (Typ.interp t_i) v2) i1);intro H00; [left;right;trivial|right;trivial]].
+      [case_eq (bit v1 i1);intro H00; [left;left;trivial|right;trivial]|case_eq (bit v2 i1);intro H00; [left;right;trivial|right;trivial]].
       case_eq ((length lits == 3) && (i < 2));intro H6;auto using C.interp_true; rewrite andb_true_iff in H6;destruct H6 as (H6,H7).
       case_eq (t_form.[Lit.blit (lits.[i+1])]);[intros a0 H8|intro H8|intro H8|intros z1 z2 H8|intros z1 H8|intros z1 H8|intros z1 H8|intros z1 z2 H8|intros z1 z2 H8|intros z1 z2 z3 H8]; auto using C.interp_true.
       case_eq (t_atom.[a0]);[intros z1 H9|intros u0 h0 H9|intros z1 z2 z3 H9|intros z1 z2 H9|intros z1 z2 H9]; auto using C.interp_true.
