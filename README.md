@@ -25,7 +25,7 @@ details.
 
 ### Use
 
-Examples are given in the file examples/Example.v. They are meant to be
+Examples are given in the file examples/Examples.v. They are meant to be
 easily re-usable for your own usage.
 
 
