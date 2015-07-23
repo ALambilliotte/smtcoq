@@ -5,11 +5,9 @@ SAT and SMT solvers.
 
 It relies on a certified checker for such witnesses. On top of it,
 vernacular commands and tactics to interface with the SAT solver zChaff
-and the SMT solver veriT are provided. It is designed in a modular way
-allowing to extend it easily to other solvers.
-
-Since version 1.2, SMTCoq also provides an extracted version of the
-checker, available only with native-coq.
+and the SMT solver veriT are provided, as well as a decision procedure
+for bitwise arithmetic over machine integers. An extracted version of
+the checker is also provided.
 
 The current stable version is the version 1.2.
 
@@ -49,11 +47,14 @@ SMTCoq.` command. For each supported solver, it provides:
 
 - a safe tactic to try to solve a Coq goal using the chosen solver.
 
+It also offers a tactic to decide bitwise arithmetic over machine
+integers, named `int_decide`.
+
 The SMTCoq checker can also be extracted to OCaml and then used
 independently from Coq.
 
-We now give more details for each solver, and explanations on
-extraction.
+We now give more details for each solver and the decision procedure, and
+explanations on extraction.
 
 
 #### zChaff
@@ -96,7 +97,7 @@ The `zchaff` tactic can be used to solve any goal of the form:
 ```
 forall l, b1 = b2
 ```
-where `l` is a list of Booleans (that can be concrete terms).
+where `l` is a list of Boolean variables.
 
 
 #### veriT
@@ -149,9 +150,23 @@ The `verit` tactic can be used to solve any goal of the form:
 ```
 forall l, b1 = b2
 ```
-where `l` is a list of Booleans. Those Booleans can be any concrete
-terms. The theories that are currently supported are `QF_UF`, `QF_LIA`,
-`QF_IDL` and their combinations.
+where `l` is a list of variables. The theories that are currently
+supported are `QF_UF`, `QF_LIA`, `QF_IDL` and their combinations.
+
+
+#### Decision procedure for machine integers
+
+The `int_decide` tactic can be used to solve any goal of the form:
+```
+forall l, b = true
+```
+where `l` is a list of variables and `b` is a Boolean expression whose
+atoms are of the form `i == j`, in which deciding whether `b` is true
+involves only reasoning over bitwise operations. (We are working on
+scaling up to arithmetic operations.)
+
+This decision procedures requires ZChaff. See INSTALL.md for
+instructions on its installation.
 
 
 #### Extraction

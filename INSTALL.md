@@ -28,6 +28,9 @@ recommend using SMTCoq with the
 [version of Coq with native data-structures](https://github.com/maximedenes/native-coq),
 following the instructions in Section "Installation from the sources".
 
+Note also that the opam package corresponds to version 1.2 and is thus a
+bit outdated.
+
 
 ## Installation of the provers
 
@@ -70,7 +73,7 @@ To turn proof production on, you need to uncomment the line
 From the sources, SMTCoq can be built either with the standard version
 of Coq or with the
 [version of Coq with native data-structures](https://github.com/maximedenes/native-coq).
-We recommend this latter for efficiency.
+We greatly recommend this latter.
 
 
 ### With the version of Coq with native data-structures
@@ -103,7 +106,7 @@ make install
    in the src directory.
 
 
-### With the standard version of Coq
+### With the standard version of Coq (deprecated)
 
 1. Install the standard version of Coq (>= 8.4) by any means that give
    access to the sources (e.g. via OPAM or from the sources).

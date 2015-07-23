@@ -12,11 +12,13 @@ Check sat.
 
 Zchaff_Checker "hole4.cnf" "hole4.log".
 
+
 (* Example that checks a VeriT certificate, for logic QF_UF *)
 
 Section Verit.
   Verit_Checker "euf.smt2" "euf.log".
 End Verit.
+
 
 (* Examples of the zchaff tactic (requires zchaff in your PATH
    environment variable):
@@ -37,6 +39,7 @@ Goal forall i j k,
 Proof.
   zchaff.
 Qed.
+
 
 (* Examples of the verit tactic (requires verit in your PATH environment
    variable):
@@ -64,4 +67,24 @@ Goal forall b1 b2 x1 x2,
   ((implb b1 b2) && (implb b2 b1) && (Zeq_bool x1 x2)).
 Proof.
   verit.
+Qed.
+
+
+(* Examples of the decision procedure for bitwise operations over
+   machine integers (requires zchaff in your PATH environment variable)
+   *)
+
+Goal forall a, (a lxor 0 == a) && (a lor 0 == a) && (a land 0 == 0).
+  int_decide.
+Qed.
+
+Goal forall a, (a lxor a == 0) && (a lor a == a) && (a land a == a).
+  int_decide.
+Qed.
+
+(* [• lxor max_int] encodes negation *)
+Goal forall a b, (a land b) lxor max_int
+              == (a lxor max_int) lor (b lxor max_int).
+Proof.
+  int_decide.
 Qed.
