@@ -6,6 +6,7 @@ Local Open Scope int63_scope.
 
 
 (* zChaff vernacular commands *)
+
 Time Zchaff_Checker "sat1.cnf" "sat1.zlog".
 Time Zchaff_Checker "sat2.cnf" "sat2.zlog".
 Time Zchaff_Checker "sat3.cnf" "sat3.zlog".
@@ -423,7 +424,7 @@ Proof.
 Abort.
 *)
 
-(*
+
 (* veriT vernacular commands *)
 
 Section Checker_Sat1.
@@ -1274,7 +1275,7 @@ Goal forall (P:Z -> Z -> bool) x y z,
 Proof.
   verit.
 Qed.
-*)
+
 
 (* Decision procedure for arithmetic on machine integers (work in progress) *)
 

@@ -6,8 +6,9 @@
 (*     Michaël Armand                                                     *)
 (*     Benjamin Grégoire                                                  *)
 (*     Chantal Keller                                                     *)
+(*     Antonin Lambilliotte                                               *)
 (*                                                                        *)
-(*     Inria - École Polytechnique - MSR-Inria Joint Lab                  *)
+(*     Inria - École Polytechnique - MSR-Inria Joint Lab - ÉNS de Lyon    *)
 (*                                                                        *)
 (*   This file is distributed under the terms of the CeCILL-C licence     *)
 (*                                                                        *)
@@ -28,7 +29,8 @@ open SmtTrace
 *)
 
 (* TODO:
-   - support other integer operations (currently supported: equality)
+   - support other integer operations (currently supported: equality,
+     &&, ||, ^^)
    - generate only the tautologies needed depending on polarity, and
      remove unused ones
    - support Immediate rules

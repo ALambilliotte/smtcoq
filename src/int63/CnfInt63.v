@@ -5,7 +5,7 @@
 (*                                                                        *)
 (*     Antonin Lambilliotte                                               *)
 (*                                                                        *)
-(*     Inria - École Polytechnique - MSR-Inria Joint Lab                  *)
+(*     Inria - École Polytechnique - MSR-Inria Joint Lab - ÉNS de Lyon    *)
 (*                                                                        *)
 (*   This file is distributed under the terms of the CeCILL-C licence     *)
 (*                                                                        *)
@@ -429,7 +429,7 @@ Section Checker.
       [case_eq (bit v1 i1);intro H00; [left;left|right]|case_eq (bit v2 i1);intro H00; [left;right|right]|case_eq (bit v1 i1);intro H00; [right|left;left]|case_eq (bit v2 i1);intro H00; [right|left;right]];trivial.
 
 
-      (*egalité*)
+      (*equality*)
       case_eq b; intro t; auto using C.interp_true;intro H3;
       
       assert (H100: a < length t_atom) by (apply PArray.get_not_default_lt; rewrite H1, def_t_atom; discriminate);
@@ -535,10 +535,10 @@ Section Checker.
       case_eq (t_form .[ Lit.blit (lits .[ 0])]); [intros a H|intro H|intro H|intros z1 z2 H|intros z1 H|intros z1 H|intros z1 H|intros z1 z2 H|intros z1 z2 H|intros z1 z2 z3 H]; auto using C.interp_true;
       case_eq (t_atom.[a]);[intros z1 H0|intros u hh H0|intros u h1 h2 H0|intros z1 z2 H0|intros z1 z2 H0]; auto using C.interp_true.
       
-      (*D'abord les cas différends de l'egalité*)
+      (*First the different cases for equality*)
       case_eq u;intro i1;auto using C.interp_true; intro H1;
       case_eq (t_atom.[hh]);[intros c H2|intros z1 z2 H2|intros b h1 h2 H2|intros n ah H2|intros z1 z2 H2];auto using C.interp_true.
-      (*Le cas des constantes*)
+      (*Case of the constants*)
       case_eq c; intro i;auto using C.interp_true;intro H3;
       case_eq (Lit.is_pos (lits .[ 0])); intro H4;auto using C.interp_true;
       case_eq (bit_rev i1 i);intro H5;simpl; 
@@ -574,7 +574,7 @@ Section Checker.
       rewrite Typ.cast_refl;
       simpl;unfold bit_rev;[rewrite lxor_spec|rewrite lxor_spec|rewrite lor_spec|rewrite land_spec];destruct (bit v1 i1);destruct (bit v2 i1);[right;left|left|left|right;right|left|right;left|right;right|left|right;left|right;left|right;right|left|left|right;right|right;left|right;left];trivial.
 
-      (*egalité*)
+      (*equality*)
       case_eq (u);[intros|intros|intros|intros|intros|intros|intros|intros|intros|intros|intros t H1]; auto using C.interp_true;
       case_eq t;[intros|intro|intro|intro|intro H2];auto using C.interp_true; subst t;
       case_eq ((length lits == digits + 1) && Lit.is_pos (lits .[ 0]) && forallbi (fun i6 l : int => if i6 == 0 then Lit.is_pos l else match t_form .[ Lit.blit l] with | Fiff l1 l2 => match t_form .[ Lit.blit l1] with | Fatom a1 => match t_form .[ Lit.blit l2] with | Fatom a2 => match t_atom .[ a1] with | Auop (UO_index j) h1' => match t_atom .[ a2] with | Auop (UO_index k) h2' => Lit.is_pos l1 && Lit.is_pos l2 && negb (Lit.is_pos l) && (j == i6 - 1) && (k == j) && (h1 == h1') && (h2' == h2) | _ => false end | _ => false end | _ => false end | _ => false end | _ => false end) lits );intros H6; auto using C.interp_true;
