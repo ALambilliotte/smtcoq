@@ -43,6 +43,16 @@ let mkInt : int -> Term.constr = fun i ->
 
 let cint = gen_constant int31_module "int31"
 
+(** Dummy implementation since the decision procedure for int63 cannot
+    work with the standard version of Coq **)
+type int63 = unit
+let maxuint63 : int63 = failwith "Not implemented"
+let mkInt63 : int63 -> Term.constr = failwith "Not implemented"
+let isInt : Term.constr -> bool = failwith "Not implemented"
+let destInt : Term.constr -> int = failwith "Not implemented"
+let destInt63 : Term.constr -> int63 = failwith "Not implemented"
+let int63_to_int : int63 -> int = failwith "Not implemented"
+
 (* PArray *)
 let parray_modules = [["SMTCoq";"versions";"standard";"Array";"PArray"]]
 

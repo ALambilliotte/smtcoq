@@ -161,7 +161,7 @@ module MakeBB = struct
 		do
                   let feq = Form.get rf (Fatom (Atom.get ra (Auop (UO_index i, l)))) in
                   let fneq = Form.neg feq in
-                  if bit_int i (Uint63.to_int j)
+                  if bit_int i (Structures.int63_to_int j)
 		  then link_Other (BuildDefInt [|feq|]) [feq]
 		  else link_Other (BuildDefInt [|feq|]) [fneq]
 		done;

@@ -35,6 +35,7 @@ let isInt : Term.constr -> bool = Term.isInt
 let destInt : Term.constr -> int =
   fun t -> Uint63.to_int (Term.destInt t)
 let destInt63 : Term.constr -> int63 = Term.destInt
+let int63_to_int : int63 -> int = Uint63.to_int
 
 let cint = gen_constant int63_modules "int"
 
