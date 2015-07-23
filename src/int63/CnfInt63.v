@@ -480,24 +480,6 @@ Section Checker.
       reflexivity.
     Qed.
 
-    Axiom afold_left_or : forall a,
-      afold_left bool int false orb (Lit.interp rho) a =
-      C.interp rho (to_list a).
-
-    Ltac tauto_check :=
-      try (rewrite !Lit.interp_neg);
-      repeat 
-      match goal with |- context [Lit.interp rho ?x] => 
-      destruct (Lit.interp rho x);trivial end.
-
-    Axiom afold_left_and : forall a,
-      afold_left bool int true andb (Lit.interp rho) a =
-      List.forallb (Lit.interp rho) (to_list a).
-
-    Axiom afold_right_impb : forall a,
-      (afold_right bool int true implb (Lit.interp rho) a) =
-      C.interp rho (to_list (or_of_imp a)).
-
     Lemma contrap : forall a b, (a = true -> b = true) <-> (b = false -> a = false).
     Proof.
       intros [ | ] [ | ];split; intros H H0; try (symmetry; apply H);trivial;apply H0.
