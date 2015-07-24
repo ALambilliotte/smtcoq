@@ -17,7 +17,6 @@ Require Import Int63.
 Require Import PArray.
 Require Import BoolEq.
 Require Import NZParity.
-Require Import Classical.
 
 Add LoadPath ".." as SMTCoq.
 
@@ -453,9 +452,40 @@ Section Checker.
       intros [ | ] [ | ];split; intros H H0; try (symmetry; apply H);trivial;apply H0.
     Qed.
 
+
+    Lemma forallb_existsb f from to :
+      Int63Op.forallb f from to =
+        negb (Int63Op.existsb (fun i => negb (f i)) from to).
+    Proof.
+      unfold Int63Op.forallb, Int63Op.existsb.
+      apply (foldi_cont_ind2 _ _ _ _ (fun x y => x tt = negb (y tt))); auto.
+      intros i c1 c2 H1 H2 H3. case (f i); simpl; auto.
+    Qed.
+
+
     Lemma bit_eq_false i1 i2: i1 <> i2 -> exists i, bit i1 i <> bit i2 i /\ i < digits = true.
     Proof.
-      intro H;rewrite bit_eq in H;apply not_all_ex_not in H;inversion H;exists x;split;[apply H0|      assert (digits <= x = true -> (Bool.eqb (bit i1 x) (bit i2 x) = true)) as H1;[intros H2;rewrite !bit_M;simpl;trivial;apply H2|apply contrap in H1;[apply negb_true_iff in H1;rewrite <- H1;rewrite <- ltb_negb_geb;trivial|rewrite Bool.eqb_false_iff;apply H0]]].
+      intro H;rewrite bit_eq in H.
+      Search (bool -> bool -> bool).
+      assert (H': ~ (forall i, 0 <= i = true -> i <= max_int = true -> Bool.eqb (bit i1 i) (bit i2 i) = true)).
+        intro H'.
+        apply H. intro i.
+        assert (H1:=leb_0 i). assert (H2:=leb_max_int i).
+        specialize (H' _ H1 H2). apply eqb_prop in H'. auto.
+      rewrite <- Int63Properties.forallb_spec in H'.
+      rewrite forallb_existsb in H'.
+      case_eq (Int63Op.existsb (fun i => negb (Bool.eqb (bit i1 i) (bit i2 i))) 0 max_int); intro Heq; rewrite Heq in H'; simpl in H';
+        [ |elim H'; reflexivity].
+      rewrite Int63Properties.existsb_spec in Heq.
+      destruct Heq as [x Heq].
+      rewrite !andb_true_iff in Heq. destruct Heq as [[H1 H2] H3].
+      exists x. split.
+      - intro H4. rewrite H4, eqb_reflx in H3. discriminate.
+      - assert (H10: digits <= x = true -> (Bool.eqb (bit i1 x) (bit i2 x) = true)).
+          intros H12;rewrite !bit_M;simpl;trivial;apply H12.
+        assert (H20: Bool.eqb (bit i1 x) (bit i2 x) = false) by (generalize H3; case (Bool.eqb (bit i1 x) (bit i2 x)); auto). clear H3.
+        apply contrap in H10; auto.
+        apply negb_true_iff in H10;rewrite <- H10;rewrite <- ltb_negb_geb;trivial.
     Qed. 
     
     Lemma inf_plus_un : forall a b, (b < max_int) = true -> (a < b) = true -> (a + 1 < b + 1) = true.
