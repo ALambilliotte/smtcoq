@@ -34,38 +34,6 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 
 
-Definition or_of_imp args :=
-  let last := PArray.length args - 1 in
-  PArray.mapi (fun i l => if i == last then l else Lit.neg l) args.
-(* Register or_of_imp as PrimInline. *)
-
-Lemma length_or_of_imp : forall args,
-  PArray.length (or_of_imp args) = PArray.length args.
-Proof. intro; unfold or_of_imp; apply length_mapi. Qed.
-
-Lemma get_or_of_imp : forall args i,
-  i < (PArray.length args) - 1 -> (or_of_imp args).[i] = Lit.neg (args.[i]).
-Proof.
-  unfold or_of_imp; intros args i H; case_eq (0 < PArray.length args).
-  intro Heq; rewrite get_mapi.
-  replace (i == PArray.length args - 1) with false; auto; symmetry; rewrite eqb_false_spec; intro; subst i; unfold is_true in H; rewrite ltb_spec, (to_Z_sub_1 _ _ Heq) in H; omega.
-  rewrite ltb_spec; unfold is_true in H; rewrite ltb_spec, (to_Z_sub_1 _ _ Heq) in H; omega.
-  rewrite ltb_negb_geb; case_eq (PArray.length args <= 0); try discriminate; intros Heq _; assert (H1: PArray.length args = 0).
-  apply to_Z_inj; rewrite leb_spec in Heq; destruct (to_Z_bounded (PArray.length args)) as [H1 _]; change [|0|] with 0%Z in *; omega.
-  rewrite !get_outofbound.
-  rewrite default_mapi, H1; auto.
-  rewrite H1; case_eq (i < 0); auto; intro H2; eelim ltb_0; eassumption.
-  rewrite length_mapi, H1; case_eq (i < 0); auto; intro H2; eelim ltb_0; eassumption.
-Qed.
-
-Lemma get_or_of_imp2 : forall args i, 0 < PArray.length args ->
-  i = (PArray.length args) - 1 -> (or_of_imp args).[i] = args.[i].
-Proof.
-  unfold or_of_imp; intros args i Heq Hi; rewrite get_mapi; subst i.
-  rewrite Int63Axioms.eqb_refl; auto.
-  rewrite ltb_spec, (to_Z_sub_1 _ _ Heq); omega.
-Qed.
-
 
 Section Checker.
 
